@@ -98,10 +98,9 @@
 
 <script type="module">
 import db from '../js/supabase.js';
-import { initAuth, isAdmin, toast } from '../js/app.js';
+import { requireAdmin, toast } from '../js/app.js';
 
-await initAuth();
-if (!isAdmin()) { location.href = '/login.html'; }
+if (!await requireAdmin()) throw new Error('Not admin');
 
 // Load stats
 async function loadStats() {

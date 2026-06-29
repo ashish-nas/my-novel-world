@@ -6,6 +6,7 @@ export let currentUser = null;
 export let currentProfile = null;
 
 export async function initAuth() {
+  // Get session once — await fully before doing anything else
   const { data: { session } } = await db.auth.getSession();
   if (session?.user) {
     currentUser = session.user;
@@ -13,17 +14,30 @@ export async function initAuth() {
     currentProfile = data;
   }
   renderNav();
+  // Do NOT set up onAuthStateChange here — it causes flicker loops
+}
 
-  db.auth.onAuthStateChange(async (_event, session) => {
-    currentUser = session?.user ?? null;
-    if (currentUser) {
-      const { data } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
-      currentProfile = data;
-    } else {
-      currentProfile = null;
-    }
-    renderNav();
-  });
+export async function requireAuth() {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) {
+    location.href = '/login.html?redirect=' + encodeURIComponent(location.pathname);
+    return false;
+  }
+  currentUser = session.user;
+  const { data } = await db.from('profiles').select('*').eq('id', session.user.id).single();
+  currentProfile = data;
+  renderNav();
+  return true;
+}
+
+export async function requireAdmin() {
+  const ok = await requireAuth();
+  if (!ok) return false;
+  if (currentProfile?.role !== 'admin') {
+    location.href = '/';
+    return false;
+  }
+  return true;
 }
 
 export function isAdmin() {
@@ -121,6 +135,3 @@ export function wordCount(html) {
 export function readTime(wc) {
   return Math.max(1, Math.round(wc / 200));
 }
-
-// ── Init ──
-initAuth();

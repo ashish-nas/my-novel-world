@@ -85,10 +85,9 @@
 
 <script type="module">
 import db from '../js/supabase.js';
-import { initAuth, isAdmin, toast, confirm } from '../js/app.js';
+import { requireAdmin, toast, confirm } from '../js/app.js';
 
-await initAuth();
-if (!isAdmin()) { location.href = '/login.html'; }
+if (!await requireAdmin()) throw new Error('Not admin');
 
 const params = new URLSearchParams(location.search);
 const bookId = params.get('book');

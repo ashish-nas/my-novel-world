@@ -117,10 +117,9 @@
 <script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
 <script type="module">
 import db from '../js/supabase.js';
-import { initAuth, isAdmin, toast, wordCount, readTime } from '../js/app.js';
+import { requireAdmin, toast, wordCount, readTime } from '../js/app.js';
 
-await initAuth();
-if (!isAdmin()) { location.href = '/login.html'; }
+if (!await requireAdmin()) throw new Error('Not admin');
 
 const params  = new URLSearchParams(location.search);
 const chId    = params.get('id');       // editing existing
