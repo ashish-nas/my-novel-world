@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Novel World — A Library of Stories</title>
+<meta name="description" content="A personal library of novels — read book by book, volume by volume, chapter by chapter.">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  /* ── Hero ── */
+  .hero {
+    min-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-glow {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 700px; height: 500px;
+    background: radial-gradient(ellipse, rgba(201,168,76,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem; letter-spacing: 0.45em;
+    color: var(--gold); text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3.5rem, 9vw, 7rem);
+    font-weight: 300; line-height: 1.02;
+    letter-spacing: -0.01em;
+    margin-bottom: 1.25rem;
+  }
+  .hero-title em { font-style: italic; color: var(--gold2); }
+  .hero-sub {
+    font-size: 0.88rem; color: var(--text2);
+    max-width: 420px; line-height: 1.8;
+    margin-bottom: 2.5rem;
+    letter-spacing: 0.04em;
+  }
+  .hero-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .hero-divider {
+    width: 1px; height: 32px;
+    background: var(--border2);
+  }
+  .hero-scroll {
+    position: absolute; bottom: 2.5rem; left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.65rem; letter-spacing: 0.25em;
+    color: var(--text3); text-transform: uppercase;
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(6px)} }
+
+  /* ── Continue reading banner ── */
+  .continue-banner {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.5rem;
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 1rem;
+    margin-bottom: 3rem;
+    transition: border-color 0.2s;
+  }
+  .continue-banner:hover { border-color: var(--gold); }
+  .continue-info { display: flex; align-items: center; gap: 1rem; }
+  .continue-icon {
+    width: 38px; height: 38px;
+    background: var(--gold-dim);
+    border: 1px solid var(--gold);
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold); font-size: 1rem; flex-shrink: 0;
+  }
+  .continue-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem; letter-spacing: 0.2em;
+    color: var(--text3); margin-bottom: 0.2rem;
+  }
+  .continue-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem; color: var(--text);
+  }
+
+  /* ── Countdown banner ── */
+  .countdown-banner {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    margin-bottom: 3rem;
+    display: none;
+  }
+  .countdown-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem; letter-spacing: 0.3em;
+    color: var(--gold); margin-bottom: 0.75rem;
+  }
+  .countdown-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem; margin-bottom: 1rem;
+  }
+  .countdown-timer {
+    display: flex; gap: 1.5rem;
+    justify-content: center; align-items: flex-end;
+  }
+  .countdown-unit { text-align: center; }
+  .countdown-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.5rem; font-weight: 300;
+    color: var(--gold); line-height: 1;
+    display: block;
+  }
+  .countdown-lbl {
+    font-family: 'Cinzel', serif;
+    font-size: 0.5rem; letter-spacing: 0.2em;
+    color: var(--text3); margin-top: 0.3rem;
+  }
+  .countdown-sep {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem; color: var(--text3);
+    padding-bottom: 0.3rem;
+  }
+
+  /* ── Search ── */
+  .search-wrap {
+    position: relative; max-width: 480px;
+    margin: 0 auto 2.5rem;
+  }
+  .search-input {
+    width: 100%; padding: 0.8rem 1rem 0.8rem 2.8rem;
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg); color: var(--text);
+    font-size: 0.88rem; outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--gold); }
+  .search-input::placeholder { color: var(--text3); }
+  .search-icon {
+    position: absolute; left: 1rem; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3); font-size: 1rem; pointer-events: none;
+  }
+  .search-results {
+    position: absolute; top: calc(100% + 6px);
+    left: 0; right: 0;
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg); overflow: hidden;
+    z-index: 50; display: none;
+  }
+  .search-results.show { display: block; }
+  .search-result-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.15s;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover { background: var(--bg3); }
+  .sr-icon { font-size: 0.9rem; color: var(--text3); }
+  .sr-title { font-size: 0.85rem; color: var(--text); }
+  .sr-sub { font-size: 0.72rem; color: var(--text2); margin-top: 1px; }
+
+  /* ── Genre filters ── */
+  .genre-filters {
+    display: flex; gap: 0.5rem;
+    flex-wrap: wrap; justify-content: center;
+    margin-bottom: 3rem;
+  }
+  .genre-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 0.58rem; letter-spacing: 0.15em;
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--border2);
+    background: none; color: var(--text2);
+    border-radius: 2px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .genre-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .genre-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+
+  /* ── Books grid ── */
+  .books-section { padding: 0 0 6rem; }
+  .section-header {
+    display: flex; align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+  }
+  .books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 2rem;
+  }
+
+  /* ── Book card ── */
+  .book-card {
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+  .book-card:hover { transform: translateY(-6px); }
+  .book-cover {
+    width: 100%; aspect-ratio: 2/3;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    position: relative; overflow: hidden;
+    margin-bottom: 1rem;
+    transition: border-color 0.3s;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 1.5rem;
+  }
+  .book-card:hover .book-cover { border-color: var(--border2); }
+  .book-cover img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .book-cover-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%);
+  }
+  .book-symbol {
+    font-size: 2rem; opacity: 0.5;
+    margin-bottom: 0.75rem; position: relative; z-index: 1;
+  }
+  .book-cover-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem; text-align: center;
+    position: relative; z-index: 1; line-height: 1.3;
+  }
+  .book-cover-author {
+    position: absolute; bottom: 0.75rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.48rem; letter-spacing: 0.18em;
+    color: var(--gold); opacity: 0.8;
+    z-index: 1;
+  }
+  .book-genre-badge {
+    position: absolute; top: 0.75rem; right: 0.75rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.45rem; letter-spacing: 0.12em;
+    padding: 0.2rem 0.5rem;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid var(--border2);
+    color: var(--text2); z-index: 1;
+  }
+  .book-new-badge {
+    position: absolute; top: 0.75rem; left: 0.75rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.45rem; letter-spacing: 0.12em;
+    padding: 0.2rem 0.5rem;
+    background: var(--gold); color: var(--bg);
+    font-weight: 600; z-index: 1;
+  }
+  .book-info { padding: 0 0.2rem; }
+  .book-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem; margin-bottom: 0.3rem;
+    color: var(--text);
+  }
+  .book-meta {
+    font-size: 0.7rem; color: var(--text3);
+    display: flex; gap: 0.75rem; align-items: center;
+  }
+  .book-meta span { color: var(--gold); }
+
+  /* ── Empty state ── */
+  .no-books {
+    grid-column: 1 / -1;
+    text-align: center; padding: 5rem 2rem;
+    color: var(--text3);
+  }
+  .no-books-icon {
+    font-size: 3rem; margin-bottom: 1rem; opacity: 0.2;
+  }
+  .no-books h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem; font-weight: 300;
+    margin-bottom: 0.5rem; color: var(--text2);
+  }
+
+  /* ── Footer ── */
+  .site-footer {
+    border-top: 1px solid var(--border);
+    padding: 3rem 0;
+    text-align: center;
+  }
+  .footer-logo {
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem; letter-spacing: 0.3em;
+    color: var(--gold); margin-bottom: 1rem;
+  }
+  .footer-text {
+    font-size: 0.75rem; color: var(--text3);
+    line-height: 1.8;
+  }
+
+  @media (max-width: 600px) {
+    .books-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .hero-title { font-size: 3rem; }
+    .countdown-timer { gap: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="main-nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <ul class="nav-links">
+    <li><a href="/" class="active">Library</a></li>
+    <li><a href="/updates.html">Updates</a></li>
+    <li><a href="/reading-order.html">Reading Order</a></li>
+    <li><a href="/qa.html">Q&A</a></li>
+  </ul>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <p class="hero-label">A Writer's Library</p>
+  <h1 class="hero-title">Stories <em>Live</em><br>Here</h1>
+  <p class="hero-sub">A collection of novels written for you — read at your own pace, chapter by chapter.</p>
+  <div class="hero-actions">
+    <a href="#library" class="btn btn-primary"><i class="ti ti-books"></i> Browse Novels</a>
+    <div class="hero-divider"></div>
+    <a href="/login.html#register" class="btn"><i class="ti ti-user-plus"></i> Join Free</a>
+  </div>
+  <div class="hero-scroll">
+    <span>Scroll</span>
+    <i class="ti ti-arrow-down"></i>
+  </div>
+</section>
+
+<!-- MAIN -->
+<main class="container" id="library">
+
+  <!-- Continue reading (shown if logged in + has progress) -->
+  <div class="continue-banner hidden" id="continue-banner">
+    <div class="continue-info">
+      <div class="continue-icon"><i class="ti ti-book-2"></i></div>
+      <div>
+        <div class="continue-label">Continue Reading</div>
+        <div class="continue-title" id="continue-title">Loading...</div>
+      </div>
+    </div>
+    <a href="#" id="continue-link" class="btn btn-primary btn-sm">
+      <i class="ti ti-arrow-right"></i> Keep Reading
+    </a>
+  </div>
+
+  <!-- Countdown timer -->
+  <div class="countdown-banner" id="countdown-banner">
+    <div class="countdown-label">Coming Soon</div>
+    <div class="countdown-title" id="countdown-title"></div>
+    <div class="countdown-timer">
+      <div class="countdown-unit">
+        <span class="countdown-num" id="cd-days">00</span>
+        <div class="countdown-lbl">Days</div>
+      </div>
+      <span class="countdown-sep">:</span>
+      <div class="countdown-unit">
+        <span class="countdown-num" id="cd-hours">00</span>
+        <div class="countdown-lbl">Hours</div>
+      </div>
+      <span class="countdown-sep">:</span>
+      <div class="countdown-unit">
+        <span class="countdown-num" id="cd-mins">00</span>
+        <div class="countdown-lbl">Mins</div>
+      </div>
+      <span class="countdown-sep">:</span>
+      <div class="countdown-unit">
+        <span class="countdown-num" id="cd-secs">00</span>
+        <div class="countdown-lbl">Secs</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <i class="ti ti-search search-icon" aria-hidden="true"></i>
+    <input
+      class="search-input"
+      id="search-input"
+      type="text"
+      placeholder="Search novels, chapters..."
+      autocomplete="off"
+      oninput="handleSearch(this.value)"
+    >
+    <div class="search-results" id="search-results"></div>
+  </div>
+
+  <!-- Genre filters -->
+  <div class="genre-filters" id="genre-filters">
+    <button class="genre-btn active" onclick="filterGenre('all', this)">All</button>
+  </div>
+
+  <!-- Books section -->
+  <div class="books-section">
+    <div class="section-header">
+      <div>
+        <p class="eyebrow" style="margin-bottom:0.3rem">The Collection</p>
+        <p style="font-size:0.8rem;color:var(--text2)"><span id="book-count">0</span> novels</p>
+      </div>
+    </div>
+    <div class="books-grid" id="books-grid">
+      <!-- Skeleton loaders -->
+      ${Array(4).fill(`
+        <div class="book-card">
+          <div class="book-cover" style="background:var(--bg2);animation:pulse 1.5s ease infinite alternate">
+            <div style="width:60%;height:1rem;background:var(--bg3);border-radius:2px"></div>
+          </div>
+          <div style="height:.9rem;background:var(--bg2);border-radius:2px;margin-bottom:.4rem;animation:pulse 1.5s ease infinite alternate"></div>
+          <div style="height:.7rem;background:var(--bg2);border-radius:2px;width:60%;animation:pulse 1.5s ease infinite alternate"></div>
+        </div>`).join('')}
+    </div>
+  </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-logo">MY NOVEL WORLD</div>
+    <p class="footer-text">
+      All stories written with care — read freely, share widely.<br>
+      <span id="footer-year"></span>
+    </p>
+  </div>
+</footer>
+
+<style>
+@keyframes pulse { from{opacity:1} to{opacity:0.4} }
+</style>
+
+<script type="module">
+import db from '/js/supabase.js';
+import { initAuth, currentUser, currentProfile } from '/js/app.js';
+
+document.getElementById('footer-year').textContent = '© ' + new Date().getFullYear();
+
+// ── Auth ──
+await initAuth();
+
+// ── Genre colors ──
+const GENRE_COLORS = {
+  'Fantasy':   '#0e0820',
+  'Romance':   '#1a0810',
+  'Thriller':  '#030e18',
+  'Mystery':   '#0d100a',
+  'Sci-Fi':    '#030b18',
+  'Drama':     '#14100a',
+  'Horror':    '#1a0508',
+  'Adventure': '#0a1008',
+};
+
+// ── Load books ──
+let allBooks = [];
+
+async function loadBooks() {
+  const { data, error } = await db
+    .from('books')
+    .select('id, title, slug, genre, description, cover_url, symbol, color, published_at, volumes(id, chapters(id))')
+    .eq('published', true)
+    .order('sort_order');
+
+  if (error || !data) {
+    renderEmpty(); return;
+  }
+
+  allBooks = data;
+  buildGenreFilters(data);
+  renderBooks(data);
+  updateCount(data.length);
+}
+
+function buildGenreFilters(books) {
+  const genres = [...new Set(books.map(b => b.genre).filter(Boolean))];
+  const wrap = document.getElementById('genre-filters');
+  genres.forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'genre-btn';
+    btn.textContent = g;
+    btn.onclick = function() { filterGenre(g, this); };
+    wrap.appendChild(btn);
+  });
+}
+
+function renderBooks(books) {
+  const grid = document.getElementById('books-grid');
+  if (!books.length) { renderEmpty(); return; }
+
+  // Check which books are "new" (published in last 14 days)
+  const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+
+  grid.innerHTML = books.map(b => {
+    const bg = b.color || GENRE_COLORS[b.genre] || '#111114';
+    const volCount = b.volumes?.length ?? 0;
+    const chCount  = b.volumes?.reduce((s,v) => s + (v.chapters?.length ?? 0), 0) ?? 0;
+    const isNew    = b.published_at && new Date(b.published_at) > twoWeeksAgo;
+
+    return `
+    <div class="book-card fade-up" data-genre="${b.genre}" onclick="location.href='/book.html?id=${b.id}'">
+      <div class="book-cover" style="background:${bg}">
+        ${b.cover_url
+          ? `<img src="${b.cover_url}" alt="${b.title}" loading="lazy"><div class="book-cover-overlay"></div>`
+          : `<div class="book-symbol">${b.symbol || '✦'}</div>
+             <div class="book-cover-title">${b.title}</div>`
+        }
+        ${isNew ? `<div class="book-new-badge">NEW</div>` : ''}
+        <div class="book-genre-badge">${b.genre || ''}</div>
+        <div class="book-cover-author">MY NOVEL WORLD</div>
+      </div>
+      <div class="book-info">
+        <div class="book-title">${b.title}</div>
+        <div class="book-meta">
+          <span>${volCount}</span> vol
+          · <span>${chCount}</span> ch
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderEmpty() {
+  document.getElementById('books-grid').innerHTML = `
+    <div class="no-books">
+      <div class="no-books-icon">✦</div>
+      <h3>No novels yet</h3>
+      <p>Check back soon — stories are coming.</p>
+    </div>`;
+}
+
+function updateCount(n) {
+  document.getElementById('book-count').textContent = n;
+}
+
+// ── Genre filter ──
+window.filterGenre = (genre, btn) => {
+  document.querySelectorAll('.genre-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = genre === 'all' ? allBooks : allBooks.filter(b => b.genre === genre);
+  renderBooks(filtered);
+  updateCount(filtered.length);
+};
+
+// ── Search ──
+window.handleSearch = async (query) => {
+  const results = document.getElementById('search-results');
+  if (!query.trim()) { results.classList.remove('show'); return; }
+
+  // Search books
+  const { data: books } = await db.from('books')
+    .select('id, title, genre')
+    .eq('published', true)
+    .ilike('title', `%${query}%`)
+    .limit(3);
+
+  // Search chapters
+  const { data: chapters } = await db.from('chapters')
+    .select('id, title, teaser, book_id')
+    .eq('published', true)
+    .ilike('title', `%${query}%`)
+    .limit(4);
+
+  const items = [
+    ...(books ?? []).map(b => ({
+      icon: 'ti-books',
+      title: b.title,
+      sub: b.genre,
+      href: `/book.html?id=${b.id}`
+    })),
+    ...(chapters ?? []).map(c => ({
+      icon: 'ti-file-text',
+      title: c.title,
+      sub: c.teaser ?? 'Chapter',
+      href: `/chapter.html?id=${c.id}`
+    })),
+  ];
+
+  if (!items.length) {
+    results.innerHTML = `<div class="search-result-item"><span class="sr-title" style="color:var(--text3)">No results for "${query}"</span></div>`;
+  } else {
+    results.innerHTML = items.map(it => `
+      <div class="search-result-item" onclick="location.href='${it.href}'">
+        <i class="ti ${it.icon} sr-icon" aria-hidden="true"></i>
+        <div>
+          <div class="sr-title">${it.title}</div>
+          <div class="sr-sub">${it.sub}</div>
+        </div>
+      </div>`).join('');
+  }
+  results.classList.add('show');
+};
+
+// Close search on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) {
+    document.getElementById('search-results').classList.remove('show');
+  }
+});
+
+// ── Countdown timer ──
+async function loadCountdown() {
+  const { data } = await db.from('countdowns')
+    .select('*').eq('active', true).single();
+  if (!data) return;
+
+  const banner = document.getElementById('countdown-banner');
+  document.getElementById('countdown-title').textContent = data.title ?? '';
+  banner.style.display = 'block';
+
+  const target = new Date(data.target_date).getTime();
+
+  function tick() {
+    const now  = Date.now();
+    const diff = target - now;
+    if (diff <= 0) { location.reload(); return; }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    document.getElementById('cd-days').textContent  = String(d).padStart(2,'0');
+    document.getElementById('cd-hours').textContent = String(h).padStart(2,'0');
+    document.getElementById('cd-mins').textContent  = String(m).padStart(2,'0');
+    document.getElementById('cd-secs').textContent  = String(s).padStart(2,'0');
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ── Continue reading ──
+async function loadContinueReading() {
+  // Import currentUser after initAuth
+  const { currentUser, currentProfile } = await import('/js/app.js');
+  if (!currentUser) return;
+
+  const { data } = await db.from('reading_progress')
+    .select('chapter_id, scroll_percent, chapters(id, title, book_id, books(title))')
+    .eq('user_id', currentUser.id)
+    .eq('completed', false)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (!data?.chapters) return;
+
+  document.getElementById('continue-title').textContent =
+    `${data.chapters.books?.title} — ${data.chapters.title}`;
+  document.getElementById('continue-link').href =
+    `/chapter.html?id=${data.chapter_id}`;
+  document.getElementById('continue-banner').classList.remove('hidden');
+}
+
+// ── Init ──
+loadBooks();
+loadCountdown();
+loadContinueReading();
+</script>
+</body>
+</html>
