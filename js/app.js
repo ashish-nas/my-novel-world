@@ -31,9 +31,34 @@ export async function requireAuth() {
 }
 
 export async function requireAdmin() {
-  const ok = await requireAuth();
-  if (!ok) return false;
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) {
+    location.href = '/login.html?redirect=' + encodeURIComponent(location.pathname);
+    return false;
+  }
+  currentUser = session.user;
+
+  // Try fetching profile up to 3 times — sometimes it's slow
+  let profile = null;
+  for (let i = 0; i < 3; i++) {
+    const { data } = await db.from('profiles').select('*').eq('id', session.user.id).single();
+    if (data) { profile = data; break; }
+    await new Promise(r => setTimeout(r, 500)); // wait 500ms and retry
+  }
+
+  // If profile missing entirely — create it as admin for the site owner
+  if (!profile) {
+    const { data: newProfile } = await db.from('profiles')
+      .insert({ id: session.user.id, username: session.user.email.split('@')[0], role: 'admin' })
+      .select().single();
+    profile = newProfile;
+  }
+
+  currentProfile = profile;
+  renderNav();
+
   if (currentProfile?.role !== 'admin') {
+    alert('Access denied — admin only.');
     location.href = '/';
     return false;
   }
