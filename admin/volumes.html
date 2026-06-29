@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volumes — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Content</div>
+      <a href="/admin/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+      <a href="/admin/books.html" class="sidebar-link active"><i class="ti ti-books"></i>Novels</a>
+      <a href="/admin/posts.html" class="sidebar-link"><i class="ti ti-speakerphone"></i>Updates</a>
+      <a href="/admin/countdown.html" class="sidebar-link"><i class="ti ti-hourglass"></i>Countdown</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/admin/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments</a>
+      <a href="/admin/qa.html" class="sidebar-link"><i class="ti ti-question-mark"></i>Q&A</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/admin/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/admin/writing.html" class="sidebar-link"><i class="ti ti-pencil"></i>Writing Tracker</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+    </div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-breadcrumb">
+      <a href="/admin/books.html">Novels</a>
+      <span class="sep">›</span>
+      <span id="book-name">Loading...</span>
+    </div>
+
+    <div class="admin-header">
+      <div>
+        <h1 id="page-title">Volumes</h1>
+        <p>Manage volumes and chapters for this novel.</p>
+      </div>
+      <button class="btn btn-primary" onclick="openVolModal()"><i class="ti ti-plus"></i> New Volume</button>
+    </div>
+
+    <div id="volumes-list"></div>
+  </main>
+</div>
+
+<!-- VOLUME MODAL -->
+<div class="overlay" id="vol-modal">
+  <div class="dialog" style="max-width:480px;text-align:left">
+    <h3 id="vol-modal-title">New Volume</h3>
+    <div style="margin-top:1.25rem">
+      <div class="form-group">
+        <label class="form-label">Volume Title</label>
+        <input id="v-title" class="form-input" placeholder="e.g. The First Darkness">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="v-desc" class="form-input" rows="3" placeholder="Short description of this volume..."></textarea>
+      </div>
+      <div class="toggle-wrap mt-2">
+        <label class="toggle"><input type="checkbox" id="v-published"><span class="toggle-slider"></span></label>
+        <span class="toggle-label">Published</span>
+      </div>
+    </div>
+    <div class="dialog-btns mt-3">
+      <button class="btn btn-primary" onclick="saveVolume()">Save Volume</button>
+      <button class="btn" onclick="closeVolModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { initAuth, isAdmin, toast, confirm } from '../js/app.js';
+
+await initAuth();
+if (!isAdmin()) { location.href = '/login.html'; }
+
+const params = new URLSearchParams(location.search);
+const bookId = params.get('book');
+if (!bookId) { location.href = '/admin/books.html'; }
+
+let book = null;
+let editVolId = null;
+
+// Load book info
+async function loadBook() {
+  const { data } = await db.from('books').select('*').eq('id', bookId).single();
+  book = data;
+  document.getElementById('book-name').textContent = data.title;
+  document.getElementById('page-title').textContent = data.title + ' — Volumes';
+  document.title = data.title + ' Volumes — Admin';
+}
+
+async function loadVolumes() {
+  const { data } = await db.from('volumes')
+    .select('*, chapters(id, title, published, word_count, sort_order)')
+    .eq('book_id', bookId)
+    .order('sort_order');
+
+  const list = document.getElementById('volumes-list');
+  if (!data?.length) {
+    list.innerHTML = `<div class="empty card" style="padding:3rem"><div class="empty-icon">📖</div><p>No volumes yet. Click <strong>New Volume</strong> to add one.</p></div>`;
+    return;
+  }
+
+  list.innerHTML = data.map(v => `
+    <div class="card" style="margin-bottom:1rem;overflow:hidden">
+      <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;margin-bottom:0.2rem">${v.title}</div>
+          <div style="font-size:0.78rem;color:var(--text2)">${v.chapters?.length ?? 0} chapters · <span class="badge ${v.published?'badge-green':'badge-red'}" style="font-size:.48rem">${v.published?'Live':'Draft'}</span></div>
+        </div>
+        <div class="td-actions">
+          <button class="btn btn-sm" onclick="editVol(${JSON.stringify(v).replace(/"/g,'&quot;')})"><i class="ti ti-pencil"></i> Edit</button>
+          <button class="btn btn-sm btn-primary" onclick="addChapter('${v.id}')"><i class="ti ti-plus"></i> Chapter</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteVol('${v.id}','${v.title}')"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <table class="admin-table">
+        <thead><tr><th>Chapter</th><th>Words</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          ${v.chapters?.length ? v.chapters.sort((a,b)=>a.sort_order-b.sort_order).map(c => `
+            <tr>
+              <td class="td-title" style="font-size:.95rem">${c.title}</td>
+              <td style="font-size:.78rem;color:var(--text2)">${c.word_count?.toLocaleString() ?? 0}</td>
+              <td><span class="badge ${c.published?'badge-green':'badge-red'}" style="font-size:.48rem">${c.published?'Live':'Draft'}</span></td>
+              <td class="td-actions">
+                <a href="/admin/edit-chapter.html?id=${c.id}" class="btn btn-sm"><i class="ti ti-pencil"></i> Edit</a>
+                <button class="btn btn-sm btn-danger" onclick="deleteChapter('${c.id}','${c.title}')"><i class="ti ti-trash"></i></button>
+              </td>
+            </tr>`).join('') :
+            `<tr><td colspan="4" style="text-align:center;color:var(--text3);font-size:.82rem;padding:1rem">No chapters yet</td></tr>`
+          }
+        </tbody>
+      </table>
+    </div>`).join('');
+}
+
+window.openVolModal = () => {
+  editVolId = null;
+  document.getElementById('vol-modal-title').textContent = 'New Volume';
+  document.getElementById('v-title').value = '';
+  document.getElementById('v-desc').value = '';
+  document.getElementById('v-published').checked = false;
+  document.getElementById('vol-modal').classList.add('show');
+};
+
+window.editVol = (v) => {
+  editVolId = v.id;
+  document.getElementById('vol-modal-title').textContent = 'Edit Volume';
+  document.getElementById('v-title').value = v.title;
+  document.getElementById('v-desc').value = v.description ?? '';
+  document.getElementById('v-published').checked = v.published;
+  document.getElementById('vol-modal').classList.add('show');
+};
+
+window.closeVolModal = () => document.getElementById('vol-modal').classList.remove('show');
+
+window.saveVolume = async () => {
+  const title = document.getElementById('v-title').value.trim();
+  if (!title) { toast('Please enter a title', 'error'); return; }
+  const payload = {
+    title,
+    description: document.getElementById('v-desc').value.trim(),
+    published: document.getElementById('v-published').checked,
+    book_id: bookId,
+  };
+  const { error } = editVolId
+    ? await db.from('volumes').update(payload).eq('id', editVolId)
+    : await db.from('volumes').insert(payload);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast(editVolId ? 'Volume updated!' : 'Volume created!', 'success');
+  closeVolModal(); loadVolumes();
+};
+
+window.deleteVol = async (id, title) => {
+  const ok = await confirm('Delete volume?', `"${title}" and all its chapters will be permanently deleted.`);
+  if (!ok) return;
+  await db.from('volumes').delete().eq('id', id);
+  toast('Volume deleted'); loadVolumes();
+};
+
+window.addChapter = (volId) => {
+  location.href = `/admin/edit-chapter.html?volume=${volId}&book=${bookId}`;
+};
+
+window.deleteChapter = async (id, title) => {
+  const ok = await confirm('Delete chapter?', `"${title}" will be permanently deleted.`);
+  if (!ok) return;
+  await db.from('chapters').delete().eq('id', id);
+  toast('Chapter deleted'); loadVolumes();
+};
+
+await loadBook();
+loadVolumes();
+</script>
+</body>
+</html>

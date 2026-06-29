@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Chapter — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css">
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Content</div>
+      <a href="/admin/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+      <a href="/admin/books.html" class="sidebar-link active"><i class="ti ti-books"></i>Novels</a>
+      <a href="/admin/posts.html" class="sidebar-link"><i class="ti ti-speakerphone"></i>Updates</a>
+      <a href="/admin/countdown.html" class="sidebar-link"><i class="ti ti-hourglass"></i>Countdown</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/admin/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments</a>
+      <a href="/admin/qa.html" class="sidebar-link"><i class="ti ti-question-mark"></i>Q&A</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/admin/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/admin/writing.html" class="sidebar-link"><i class="ti ti-pencil"></i>Writing Tracker</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+    </div>
+  </aside>
+
+  <main class="admin-main fade-up" style="max-width:100%">
+    <div class="admin-breadcrumb" id="breadcrumb">
+      <a href="/admin/books.html">Novels</a>
+      <span class="sep">›</span>
+      <span id="bc-vol">Volume</span>
+      <span class="sep">›</span>
+      <span id="bc-chapter">Chapter</span>
+    </div>
+
+    <div class="editor-layout">
+      <!-- EDITOR MAIN -->
+      <div class="editor-main">
+        <div class="form-group">
+          <label class="form-label">Chapter Title</label>
+          <input id="c-title" class="form-input" style="font-family:'Cormorant Garamond',serif;font-size:1.3rem" placeholder="Chapter title...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teaser (shown in chapter lists)</label>
+          <input id="c-teaser" class="form-input" placeholder="One-line hook that appears in the chapter list...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Chapter Content</label>
+          <div id="quill-editor"></div>
+        </div>
+      </div>
+
+      <!-- EDITOR SIDEBAR -->
+      <div class="editor-sidebar">
+        <h3>Publish Settings</h3>
+
+        <div class="sidebar-field">
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" id="c-published"><span class="toggle-slider"></span></label>
+            <span class="toggle-label">Published</span>
+          </div>
+        </div>
+
+        <div class="sidebar-field" id="schedule-wrap" style="margin-top:1rem">
+          <label class="form-label">Schedule for later</label>
+          <input id="c-scheduled" type="datetime-local" class="form-input">
+          <div class="form-hint">Leave blank to publish immediately when toggled on</div>
+        </div>
+
+        <div style="border-top:1px solid var(--border);margin:1rem 0;padding-top:1rem">
+          <h3>Stats</h3>
+          <div style="font-size:.8rem;color:var(--text2);line-height:2">
+            <div>Words: <span id="word-count" class="text-gold">0</span></div>
+            <div>Read time: <span id="read-time" class="text-gold">0 min</span></div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid var(--border);margin:1rem 0;padding-top:1rem">
+          <h3>Version History</h3>
+          <div id="versions-list" style="font-size:.78rem;color:var(--text2)">
+            <p style="color:var(--text3)">Saved versions appear here</p>
+          </div>
+        </div>
+
+        <div style="margin-top:1.5rem;display:flex;flex-direction:column;gap:.75rem">
+          <button class="btn btn-primary w-full" onclick="saveChapter(true)">
+            <i class="ti ti-device-floppy"></i> Save & Publish
+          </button>
+          <button class="btn w-full" onclick="saveChapter(false)">
+            <i class="ti ti-device-floppy"></i> Save Draft
+          </button>
+          <button class="btn w-full" id="preview-btn" onclick="previewChapter()">
+            <i class="ti ti-eye"></i> Preview
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
+<script type="module">
+import db from '../js/supabase.js';
+import { initAuth, isAdmin, toast, wordCount, readTime } from '../js/app.js';
+
+await initAuth();
+if (!isAdmin()) { location.href = '/login.html'; }
+
+const params  = new URLSearchParams(location.search);
+const chId    = params.get('id');       // editing existing
+const volId   = params.get('volume');   // new chapter
+const bookId  = params.get('book');
+
+// ── Quill setup ──
+const quill = new Quill('#quill-editor', {
+  theme: 'snow',
+  placeholder: 'Write your chapter here...',
+  modules: {
+    toolbar: [
+      [{ header: [2, 3, false] }],
+      ['bold', 'italic', 'underline'],
+      ['blockquote'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['clean']
+    ]
+  }
+});
+
+// Live word count
+quill.on('text-change', () => {
+  const html = quill.root.innerHTML;
+  const wc   = wordCount(html);
+  document.getElementById('word-count').textContent = wc.toLocaleString();
+  document.getElementById('read-time').textContent  = readTime(wc) + ' min';
+});
+
+// ── Load existing chapter ──
+let chapter = null;
+let volumeData = null;
+
+if (chId) {
+  const { data } = await db.from('chapters')
+    .select('*, volumes(title, book_id, books(title))')
+    .eq('id', chId).single();
+  chapter = data;
+  document.getElementById('c-title').value   = data.title;
+  document.getElementById('c-teaser').value  = data.teaser ?? '';
+  document.getElementById('c-published').checked = data.published;
+  if (data.scheduled_at) document.getElementById('c-scheduled').value = data.scheduled_at.slice(0,16);
+  quill.root.innerHTML = data.content ?? '';
+  document.getElementById('bc-vol').textContent     = data.volumes?.title ?? 'Volume';
+  document.getElementById('bc-chapter').textContent = data.title;
+  document.title = 'Edit: ' + data.title + ' — Admin';
+  const wc = wordCount(data.content);
+  document.getElementById('word-count').textContent = wc.toLocaleString();
+  document.getElementById('read-time').textContent  = readTime(wc) + ' min';
+  loadVersions();
+} else if (volId) {
+  const { data } = await db.from('volumes').select('*, books(title)').eq('id',volId).single();
+  volumeData = data;
+  document.getElementById('bc-vol').textContent     = data.title;
+  document.getElementById('bc-chapter').textContent = 'New Chapter';
+  document.title = 'New Chapter — Admin';
+}
+
+// ── Save ──
+window.saveChapter = async (publish) => {
+  const title = document.getElementById('c-title').value.trim();
+  if (!title) { toast('Please enter a chapter title', 'error'); return; }
+
+  const content   = quill.root.innerHTML;
+  const wc        = wordCount(content);
+  const scheduled = document.getElementById('c-scheduled').value;
+  const isPublished = publish || document.getElementById('c-published').checked;
+
+  // Save version snapshot before overwriting
+  if (chId && chapter) {
+    await db.from('chapter_versions').insert({
+      chapter_id: chId,
+      title: chapter.title,
+      content: chapter.content,
+      word_count: chapter.word_count,
+    });
+    // Keep only last 20 versions
+    const { data: vers } = await db.from('chapter_versions')
+      .select('id, saved_at').eq('chapter_id', chId).order('saved_at', {ascending:false});
+    if (vers?.length > 20) {
+      const toDelete = vers.slice(20).map(v => v.id);
+      await db.from('chapter_versions').delete().in('id', toDelete);
+    }
+  }
+
+  const payload = {
+    title,
+    teaser: document.getElementById('c-teaser').value.trim(),
+    content,
+    word_count: wc,
+    published: isPublished,
+    published_at: isPublished && !chapter?.published_at ? new Date().toISOString() : (chapter?.published_at ?? null),
+    scheduled_at: scheduled ? new Date(scheduled).toISOString() : null,
+    volume_id: chId ? chapter.volume_id : volId,
+    book_id: chId ? chapter.volumes?.book_id : bookId,
+  };
+
+  if (chId) {
+    const { error } = await db.from('chapters').update(payload).eq('id', chId);
+    if (error) { toast('Error: ' + error.message, 'error'); return; }
+    chapter = { ...chapter, ...payload };
+    loadVersions();
+  } else {
+    const { data, error } = await db.from('chapters').insert(payload).select().single();
+    if (error) { toast('Error: ' + error.message, 'error'); return; }
+    // Redirect to edit mode
+    history.replaceState(null,'',`/admin/edit-chapter.html?id=${data.id}`);
+    chapter = data;
+  }
+
+  document.getElementById('c-published').checked = isPublished;
+  toast(isPublished ? 'Chapter published!' : 'Draft saved', 'success');
+};
+
+// ── Version history ──
+async function loadVersions() {
+  if (!chId) return;
+  const { data } = await db.from('chapter_versions')
+    .select('id, saved_at, word_count')
+    .eq('chapter_id', chId)
+    .order('saved_at', {ascending:false})
+    .limit(10);
+
+  const el = document.getElementById('versions-list');
+  if (!data?.length) { el.innerHTML = '<p style="color:var(--text3)">No versions yet</p>'; return; }
+  el.innerHTML = data.map(v => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem 0;border-bottom:.5px solid var(--border)">
+      <div>
+        <div>${new Date(v.saved_at).toLocaleString()}</div>
+        <div style="color:var(--text3)">${v.word_count?.toLocaleString() ?? 0} words</div>
+      </div>
+      <button class="btn btn-sm" onclick="restoreVersion('${v.id}')">Restore</button>
+    </div>`).join('');
+}
+
+window.restoreVersion = async (verId) => {
+  if (!window.confirm('Restore this version? Current content will be overwritten.')) return;
+  const { data } = await db.from('chapter_versions').select('*').eq('id', verId).single();
+  document.getElementById('c-title').value = data.title;
+  quill.root.innerHTML = data.content ?? '';
+  toast('Version restored — save to apply', 'success');
+};
+
+window.previewChapter = () => {
+  if (chId) window.open(`/chapter.html?id=${chId}`, '_blank');
+  else toast('Save the chapter first to preview it', 'error');
+};
+</script>
+</body>
+</html>

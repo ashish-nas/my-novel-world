@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — My Novel World</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Content</div>
+      <a href="/admin/" class="sidebar-link active"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+      <a href="/admin/books.html" class="sidebar-link"><i class="ti ti-books"></i>Novels</a>
+      <a href="/admin/posts.html" class="sidebar-link"><i class="ti ti-speakerphone"></i>Updates</a>
+      <a href="/admin/countdown.html" class="sidebar-link"><i class="ti ti-hourglass"></i>Countdown</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/admin/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments</a>
+      <a href="/admin/qa.html" class="sidebar-link"><i class="ti ti-question-mark"></i>Q&A</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/admin/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/admin/writing.html" class="sidebar-link"><i class="ti ti-pencil"></i>Writing Tracker</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="admin-main fade-up">
+    <div class="admin-header">
+      <div>
+        <h1>Dashboard</h1>
+        <p>Welcome back. Here's what's happening on My Novel World.</p>
+      </div>
+      <a href="/admin/books.html" class="btn btn-primary"><i class="ti ti-plus"></i> New Novel</a>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card"><div class="stat-num" id="s-books">—</div><div class="stat-label">Novels</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-chapters">—</div><div class="stat-label">Chapters</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-readers">—</div><div class="stat-label">Readers</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-words">—</div><div class="stat-label">Words Published</div></div>
+    </div>
+
+    <!-- Recent chapters -->
+    <div style="margin-bottom:2rem">
+      <div class="flex-center justify-between mb-2">
+        <div class="eyebrow" style="margin:0">Recent Chapters</div>
+        <a href="/admin/books.html" class="btn btn-sm">All novels →</a>
+      </div>
+      <div class="card" style="overflow:hidden">
+        <table class="admin-table" id="recent-table">
+          <thead><tr>
+            <th>Chapter</th><th>Novel</th><th>Status</th><th>Words</th><th>Published</th>
+          </tr></thead>
+          <tbody id="recent-body">
+            <tr><td colspan="5"><div class="empty"><div class="empty-icon">✦</div><p>Loading...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pending comments -->
+    <div>
+      <div class="flex-center justify-between mb-2">
+        <div class="eyebrow" style="margin:0">Pending Comments</div>
+        <a href="/admin/comments.html" class="btn btn-sm">All comments →</a>
+      </div>
+      <div class="card" style="overflow:hidden">
+        <table class="admin-table">
+          <thead><tr><th>Reader</th><th>Chapter</th><th>Comment</th><th></th></tr></thead>
+          <tbody id="pending-body">
+            <tr><td colspan="4"><div class="empty"><div class="empty-icon">💬</div><p>Loading...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { initAuth, isAdmin, toast } from '../js/app.js';
+
+await initAuth();
+if (!isAdmin()) { location.href = '/login.html'; }
+
+// Load stats
+async function loadStats() {
+  const [books, chapters, readers, words] = await Promise.all([
+    db.from('books').select('id', {count:'exact',head:true}),
+    db.from('chapters').select('id', {count:'exact',head:true}).eq('published',true),
+    db.from('profiles').select('id', {count:'exact',head:true}).eq('role','reader'),
+    db.from('chapters').select('word_count').eq('published',true),
+  ]);
+  document.getElementById('s-books').textContent    = books.count ?? 0;
+  document.getElementById('s-chapters').textContent = chapters.count ?? 0;
+  document.getElementById('s-readers').textContent  = readers.count ?? 0;
+  const total = (words.data ?? []).reduce((s,r) => s + (r.word_count||0), 0);
+  document.getElementById('s-words').textContent = total >= 1000
+    ? (total/1000).toFixed(1)+'k' : total;
+}
+
+// Load recent chapters
+async function loadRecent() {
+  const { data } = await db.from('chapters')
+    .select('id, title, published, word_count, published_at, books(title)')
+    .order('created_at', {ascending:false}).limit(8);
+
+  const body = document.getElementById('recent-body');
+  if (!data?.length) {
+    body.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">✦</div><p>No chapters yet. <a href="/admin/books.html" class="text-gold">Add a novel first →</a></p></div></td></tr>`;
+    return;
+  }
+  body.innerHTML = data.map(c => `
+    <tr>
+      <td class="td-title">${c.title}</td>
+      <td>${c.books?.title ?? '—'}</td>
+      <td><span class="badge ${c.published ? 'badge-green':'badge-red'}">${c.published?'Live':'Draft'}</span></td>
+      <td>${c.word_count?.toLocaleString() ?? 0}</td>
+      <td>${c.published_at ? new Date(c.published_at).toLocaleDateString() : '—'}</td>
+    </tr>`).join('');
+}
+
+// Load pending comments
+async function loadPending() {
+  const { data } = await db.from('comments')
+    .select('id, content, created_at, profiles(username), chapters(title)')
+    .eq('approved', false).order('created_at',{ascending:false}).limit(5);
+
+  const body = document.getElementById('pending-body');
+  if (!data?.length) {
+    body.innerHTML = `<tr><td colspan="4"><div class="empty"><div class="empty-icon">💬</div><p>No pending comments.</p></div></td></tr>`;
+    return;
+  }
+  body.innerHTML = data.map(c => `
+    <tr>
+      <td>${c.profiles?.username ?? 'Reader'}</td>
+      <td class="text-sm">${c.chapters?.title ?? '—'}</td>
+      <td class="text-sm text-muted" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.content}</td>
+      <td class="td-actions">
+        <button class="btn btn-sm badge-green" onclick="approveComment('${c.id}')">Approve</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteComment('${c.id}')">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+window.approveComment = async (id) => {
+  await db.from('comments').update({approved:true}).eq('id',id);
+  toast('Comment approved', 'success'); loadPending();
+};
+window.deleteComment = async (id) => {
+  await db.from('comments').delete().eq('id',id);
+  toast('Comment deleted'); loadPending();
+};
+
+loadStats(); loadRecent(); loadPending();
+</script>
+</body>
+</html>
