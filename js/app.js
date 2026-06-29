@@ -38,15 +38,15 @@ export async function requireAdmin() {
   }
   currentUser = session.user;
 
-  // Try fetching profile up to 3 times — sometimes it's slow
+  // Try fetching profile up to 3 times
   let profile = null;
   for (let i = 0; i < 3; i++) {
     const { data } = await db.from('profiles').select('*').eq('id', session.user.id).single();
     if (data) { profile = data; break; }
-    await new Promise(r => setTimeout(r, 500)); // wait 500ms and retry
+    await new Promise(r => setTimeout(r, 600));
   }
 
-  // If profile missing entirely — create it as admin for the site owner
+  // If profile missing — create it as admin
   if (!profile) {
     const { data: newProfile } = await db.from('profiles')
       .insert({ id: session.user.id, username: session.user.email.split('@')[0], role: 'admin' })
@@ -57,8 +57,8 @@ export async function requireAdmin() {
   currentProfile = profile;
   renderNav();
 
-  if (currentProfile?.role !== 'admin') {
-    alert('Access denied — admin only.');
+  // Only redirect if role is definitely not admin after all retries
+  if (!currentProfile || currentProfile.role !== 'admin') {
     location.href = '/';
     return false;
   }
