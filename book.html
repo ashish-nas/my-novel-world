@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loading... — My Novel World</title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  /* ── Book hero ── */
+  .book-hero {
+    padding: 2rem 0 4rem;
+    position: relative;
+  }
+  .book-hero-bg {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 420px;
+    opacity: 0.15;
+    filter: blur(60px);
+    pointer-events: none;
+    z-index: -1;
+  }
+  .book-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  /* ── Cover ── */
+  .book-cover-large {
+    width: 100%;
+    aspect-ratio: 2/3;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    position: relative;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 2rem;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+  .book-cover-large img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .book-cover-large-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%);
+  }
+  .cover-symbol-large {
+    font-size: 3.5rem; opacity: 0.5;
+    margin-bottom: 1.5rem; position: relative; z-index: 1;
+  }
+  .cover-title-large {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem; text-align: center;
+    position: relative; z-index: 1; line-height: 1.3;
+  }
+  .cover-author-large {
+    position: absolute; bottom: 1.25rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem; letter-spacing: 0.2em;
+    color: var(--gold); opacity: 0.9; z-index: 1;
+  }
+
+  /* Action buttons under cover */
+  .cover-actions {
+    margin-top: 1.5rem;
+    display: flex; flex-direction: column; gap: 0.6rem;
+  }
+  .icon-btn-row { display: flex; gap: 0.5rem; }
+  .icon-btn {
+    flex: 1; padding: 0.6rem;
+    border: 1px solid var(--border2);
+    background: var(--bg2); color: var(--text2);
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.4rem; font-size: 0.78rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .icon-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+
+  /* ── Info column ── */
+  .book-genre-tag {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem; letter-spacing: 0.3em;
+    color: var(--gold); text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+  .book-title-hero {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    font-weight: 300; line-height: 1.1;
+    margin-bottom: 1.25rem;
+  }
+  .book-description {
+    font-size: 0.95rem; color: var(--text2);
+    line-height: 1.85; max-width: 600px;
+    margin-bottom: 2rem;
+  }
+  .book-stats-row {
+    display: flex; gap: 2.5rem;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+  .bstat { text-align: left; }
+  .bstat-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem; color: var(--gold);
+    line-height: 1; margin-bottom: 0.3rem;
+  }
+  .bstat-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem; letter-spacing: 0.18em;
+    color: var(--text3); text-transform: uppercase;
+  }
+
+  .start-reading-row { display: flex; gap: 1rem; align-items: center; }
+
+  /* ── Reviews summary ── */
+  .review-summary {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-top: 1rem;
+  }
+  .stars { color: var(--gold); font-size: 0.95rem; letter-spacing: 1px; }
+  .review-count { font-size: 0.78rem; color: var(--text3); }
+
+  /* ── Tabs ── */
+  .book-tabs {
+    display: flex; gap: 2rem;
+    border-bottom: 1px solid var(--border);
+    margin: 3rem 0 2rem;
+  }
+  .book-tab {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem; letter-spacing: 0.15em;
+    padding: 0.9rem 0;
+    color: var(--text3); cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none;
+  }
+  .book-tab:hover { color: var(--text2); }
+  .book-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; animation: fadeUp 0.3s ease; }
+
+  /* ── Volumes list ── */
+  .volumes-list { display: flex; flex-direction: column; gap: 1rem; }
+  .volume-row {
+    display: flex; align-items: center; gap: 1.5rem;
+    padding: 1.5rem; background: var(--bg2);
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .volume-row:hover { border-color: var(--gold); }
+  .volume-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.2rem; color: var(--border2);
+    min-width: 2.5rem; text-align: center; transition: color 0.2s;
+  }
+  .volume-row:hover .volume-num { color: var(--gold); }
+  .volume-info { flex: 1; }
+  .volume-title { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; margin-bottom: 0.3rem; }
+  .volume-desc { font-size: 0.8rem; color: var(--text2); line-height: 1.6; margin-bottom: 0.4rem; max-width: 500px; }
+  .volume-meta { font-size: 0.72rem; color: var(--text3); }
+  .volume-arrow { color: var(--text3); font-size: 1.2rem; transition: all 0.2s; }
+  .volume-row:hover .volume-arrow { color: var(--gold); transform: translateX(4px); }
+
+  /* ── Characters grid ── */
+  .characters-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr));
+    gap: 1.25rem;
+  }
+  .char-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1rem; text-align: center;
+  }
+  .char-portrait {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--bg3); border: 1px solid var(--border2);
+    margin: 0 auto 0.75rem; display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--text2);
+    overflow: hidden;
+  }
+  .char-portrait img { width: 100%; height: 100%; object-fit: cover; }
+  .char-name { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; margin-bottom: 0.3rem; }
+
+  /* ── Reviews list ── */
+  .review-form-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 2rem;
+  }
+  .star-input { display: flex; gap: 0.3rem; margin-bottom: 1rem; }
+  .star-input i { font-size: 1.5rem; color: var(--border2); cursor: pointer; transition: color 0.15s; }
+  .star-input i.filled { color: var(--gold); }
+  .review-item {
+    padding: 1.25rem 0; border-bottom: 1px solid var(--border);
+  }
+  .review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+  .review-author { font-size: 0.85rem; color: var(--text); }
+  .review-date { font-size: 0.72rem; color: var(--text3); }
+  .review-text { font-size: 0.88rem; color: var(--text2); line-height: 1.7; }
+
+  @media (max-width: 768px) {
+    .book-layout { grid-template-columns: 1fr; }
+    .book-cover-large { max-width: 220px; margin: 0 auto; }
+    .book-stats-row { gap: 1.5rem; flex-wrap: wrap; }
+    .book-tabs { gap: 1.25rem; overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav" id="main-nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <ul class="nav-links">
+    <li><a href="/">Library</a></li>
+    <li><a href="/updates.html">Updates</a></li>
+    <li><a href="/reading-order.html">Reading Order</a></li>
+    <li><a href="/qa.html">Q&A</a></li>
+  </ul>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="page">
+  <div class="container">
+
+    <div class="book-hero">
+      <div class="book-hero-bg" id="hero-bg"></div>
+
+      <div class="book-layout" id="book-layout">
+        <!-- Cover column -->
+        <div>
+          <div class="book-cover-large" id="book-cover" style="background:#111114">
+            <div class="cover-symbol-large">✦</div>
+            <div class="cover-title-large">Loading...</div>
+          </div>
+          <div class="cover-actions">
+            <a href="#" id="start-reading-btn" class="btn btn-primary w-full" style="justify-content:center">
+              <i class="ti ti-book"></i> Start Reading
+            </a>
+            <div class="icon-btn-row">
+              <button class="icon-btn" id="bookmark-btn" onclick="toggleBookmark()">
+                <i class="ti ti-bookmark"></i> Save
+              </button>
+              <button class="icon-btn" id="notify-btn" onclick="toggleNotify()">
+                <i class="ti ti-bell"></i> Notify
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info column -->
+        <div>
+          <p class="book-genre-tag" id="book-genre">Loading</p>
+          <h1 class="book-title-hero" id="book-title">Loading...</h1>
+          <p class="book-description" id="book-description"></p>
+
+          <div class="review-summary" id="review-summary" style="display:none">
+            <span class="stars" id="review-stars"></span>
+            <span class="review-count" id="review-count"></span>
+          </div>
+
+          <div class="book-stats-row">
+            <div class="bstat"><div class="bstat-num" id="stat-volumes">—</div><div class="bstat-label">Volumes</div></div>
+            <div class="bstat"><div class="bstat-num" id="stat-chapters">—</div><div class="bstat-label">Chapters</div></div>
+            <div class="bstat"><div class="bstat-num" id="stat-words">—</div><div class="bstat-label">Words</div></div>
+            <div class="bstat"><div class="bstat-num" id="stat-likes">—</div><div class="bstat-label">Likes</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="book-tabs">
+        <button class="book-tab active" onclick="switchTab('volumes', this)">Volumes</button>
+        <button class="book-tab" onclick="switchTab('characters', this)">Characters</button>
+        <button class="book-tab" onclick="switchTab('reviews', this)">Reviews</button>
+      </div>
+
+      <!-- Volumes tab -->
+      <div class="tab-panel active" id="tab-volumes">
+        <div class="volumes-list" id="volumes-list">
+          <div class="empty"><div class="empty-icon">📖</div><p>Loading volumes...</p></div>
+        </div>
+      </div>
+
+      <!-- Characters tab -->
+      <div class="tab-panel" id="tab-characters">
+        <div class="characters-grid" id="characters-grid">
+          <div class="empty" style="grid-column:1/-1"><div class="empty-icon">👤</div><p>No characters added yet.</p></div>
+        </div>
+      </div>
+
+      <!-- Reviews tab -->
+      <div class="tab-panel" id="tab-reviews">
+        <div class="review-form-box hidden" id="review-form-box">
+          <p class="form-label" style="margin-bottom:0.75rem">Your Rating</p>
+          <div class="star-input" id="star-input">
+            <i class="ti ti-star" data-val="1"></i>
+            <i class="ti ti-star" data-val="2"></i>
+            <i class="ti ti-star" data-val="3"></i>
+            <i class="ti ti-star" data-val="4"></i>
+            <i class="ti ti-star" data-val="5"></i>
+          </div>
+          <textarea id="review-text" class="form-input" rows="3" placeholder="Share your thoughts on this novel..."></textarea>
+          <button class="btn btn-primary mt-2" onclick="submitReview()">Post Review</button>
+        </div>
+        <p class="text-sm text-muted mb-2" id="login-to-review" style="display:none">
+          <a href="/login.html" class="text-gold">Sign in</a> to leave a review.
+        </p>
+        <div id="reviews-list">
+          <div class="empty"><div class="empty-icon">★</div><p>No reviews yet. Be the first!</p></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import db from '/js/supabase.js';
+import { initAuth, toast } from '/js/app.js';
+
+const params = new URLSearchParams(location.search);
+const bookId = params.get('id');
+
+if (!bookId) location.href = '/';
+
+await initAuth();
+const { currentUser } = await import('/js/app.js');
+
+let book = null;
+let userRating = 0;
+
+const GENRE_COLORS = {
+  'Fantasy':'#0e0820','Romance':'#1a0810','Thriller':'#030e18',
+  'Mystery':'#0d100a','Sci-Fi':'#030b18','Drama':'#14100a',
+  'Horror':'#1a0508','Adventure':'#0a1008',
+};
+
+// ── Load book ──
+async function loadBook() {
+  const { data, error } = await db.from('books')
+    .select('*, volumes(id, title, description, sort_order, chapters(id, title, word_count, published))')
+    .eq('id', bookId).eq('published', true).single();
+
+  if (error || !data) {
+    document.getElementById('book-title').textContent = 'Novel not found';
+    document.getElementById('book-description').textContent = 'This novel may have been removed or is not yet published.';
+    return;
+  }
+
+  book = data;
+  document.title = data.title + ' — My Novel World';
+
+  // Cover
+  const bg = data.color || GENRE_COLORS[data.genre] || '#111114';
+  const coverEl = document.getElementById('book-cover');
+  coverEl.style.background = bg;
+  coverEl.innerHTML = data.cover_url
+    ? `<img src="${data.cover_url}" alt="${data.title}"><div class="book-cover-large-overlay"></div><div class="cover-author-large">MY NOVEL WORLD</div>`
+    : `<div class="cover-symbol-large">${data.symbol || '✦'}</div>
+       <div class="cover-title-large">${data.title}</div>
+       <div class="cover-author-large">MY NOVEL WORLD</div>`;
+
+  document.getElementById('hero-bg').style.background = bg;
+  document.getElementById('book-genre').textContent = data.genre || '';
+  document.getElementById('book-title').textContent = data.title;
+  document.getElementById('book-description').textContent = data.description || '';
+
+  // Stats
+  const volumes = (data.volumes || []).filter(v => v).sort((a,b)=>a.sort_order-b.sort_order);
+  const publishedVolumes = volumes; // volumes don't have published filter applied here for simplicity
+  const allChapters = volumes.flatMap(v => (v.chapters||[]).filter(c=>c.published));
+  const totalWords = allChapters.reduce((s,c)=>s+(c.word_count||0),0);
+
+  document.getElementById('stat-volumes').textContent = volumes.length;
+  document.getElementById('stat-chapters').textContent = allChapters.length;
+  document.getElementById('stat-words').textContent = totalWords >= 1000 ? (totalWords/1000).toFixed(1)+'k' : totalWords;
+  document.getElementById('stat-likes').textContent = '—';
+
+  // Start reading button → first chapter of first volume
+  const firstVol = volumes.find(v => (v.chapters||[]).some(c=>c.published));
+  if (firstVol) {
+    const firstCh = firstVol.chapters.filter(c=>c.published).sort((a,b)=>(a.sort_order??0)-(b.sort_order??0))[0];
+    document.getElementById('start-reading-btn').href = `/chapter.html?id=${firstCh.id}`;
+  } else {
+    document.getElementById('start-reading-btn').style.display = 'none';
+  }
+
+  // Render volumes list
+  renderVolumes(volumes);
+
+  // Load extras
+  loadCharacters();
+  loadReviews();
+  loadLikesCount();
+  if (currentUser) {
+    checkBookmark();
+    checkNotify();
+  } else {
+    document.getElementById('login-to-review').style.display = 'block';
+  }
+}
+
+function renderVolumes(volumes) {
+  const list = document.getElementById('volumes-list');
+  const published = volumes.filter(v => (v.chapters||[]).some(c=>c.published) || v.title);
+  if (!published.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📖</div><p>No volumes published yet.</p></div>`;
+    return;
+  }
+  list.innerHTML = published.map((v,i) => {
+    const chCount = (v.chapters||[]).filter(c=>c.published).length;
+    return `
+    <div class="volume-row" onclick="location.href='/volume.html?id=${v.id}'">
+      <div class="volume-num">${String(i+1).padStart(2,'0')}</div>
+      <div class="volume-info">
+        <div class="volume-title">${v.title}</div>
+        ${v.description ? `<div class="volume-desc">${v.description}</div>` : ''}
+        <div class="volume-meta">${chCount} chapter${chCount!==1?'s':''}</div>
+      </div>
+      <div class="volume-arrow">→</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Tabs ──
+window.switchTab = (tab, btn) => {
+  document.querySelectorAll('.book-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+};
+
+// ── Characters ──
+async function loadCharacters() {
+  const { data } = await db.from('characters').select('*').eq('book_id', bookId);
+  const grid = document.getElementById('characters-grid');
+  if (!data?.length) return; // keep default empty state
+  grid.innerHTML = data.map(c => `
+    <div class="char-card">
+      <div class="char-portrait">
+        ${c.portrait_url ? `<img src="${c.portrait_url}">` : c.name.charAt(0)}
+      </div>
+      <div class="char-name">${c.name}</div>
+      <span class="badge ${c.role==='protagonist'?'badge-gold':c.role==='antagonist'?'badge-red':''}">${c.role}</span>
+    </div>`).join('');
+}
+
+// ── Reviews ──
+async function loadReviews() {
+  const { data } = await db.from('reviews')
+    .select('*, profiles(username)')
+    .eq('book_id', bookId).eq('hidden', false)
+    .order('pinned', {ascending:false})
+    .order('created_at', {ascending:false});
+
+  if (data?.length) {
+    const avg = data.reduce((s,r)=>s+r.rating,0) / data.length;
+    document.getElementById('review-summary').style.display = 'flex';
+    document.getElementById('review-stars').textContent = '★'.repeat(Math.round(avg)) + '☆'.repeat(5-Math.round(avg));
+    document.getElementById('review-count').textContent = `${avg.toFixed(1)} (${data.length} review${data.length!==1?'s':''})`;
+
+    document.getElementById('reviews-list').innerHTML = data.map(r => `
+      <div class="review-item">
+        <div class="review-header">
+          <span class="review-author">${r.profiles?.username ?? 'Reader'}</span>
+          <span class="review-date">${new Date(r.created_at).toLocaleDateString()}</span>
+        </div>
+        <div class="stars" style="font-size:.8rem;margin-bottom:.4rem">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
+        ${r.content ? `<div class="review-text">${r.content}</div>` : ''}
+      </div>`).join('');
+  }
+
+  if (currentUser) {
+    document.getElementById('review-form-box').classList.remove('hidden');
+    const { data: mine } = await db.from('reviews').select('*').eq('book_id', bookId).eq('user_id', currentUser.id).single();
+    if (mine) {
+      userRating = mine.rating;
+      document.getElementById('review-text').value = mine.content || '';
+      updateStars();
+    }
+  }
+}
+
+// Star input interaction
+document.querySelectorAll('#star-input i').forEach(star => {
+  star.addEventListener('click', () => {
+    userRating = parseInt(star.dataset.val);
+    updateStars();
+  });
+});
+function updateStars() {
+  document.querySelectorAll('#star-input i').forEach(s => {
+    s.classList.toggle('filled', parseInt(s.dataset.val) <= userRating);
+  });
+}
+
+window.submitReview = async () => {
+  if (!currentUser) { toast('Please sign in to review', 'error'); return; }
+  if (userRating === 0) { toast('Please select a star rating', 'error'); return; }
+  const content = document.getElementById('review-text').value.trim();
+
+  const { error } = await db.from('reviews').upsert({
+    user_id: currentUser.id, book_id: bookId,
+    rating: userRating, content
+  }, { onConflict: 'user_id,book_id' });
+
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Review posted!', 'success');
+  loadReviews();
+};
+
+// ── Bookmark ──
+async function checkBookmark() {
+  const { data } = await db.from('bookmarks').select('id').eq('user_id', currentUser.id).eq('book_id', bookId).single();
+  document.getElementById('bookmark-btn').classList.toggle('active', !!data);
+}
+window.toggleBookmark = async () => {
+  if (!currentUser) { location.href = '/login.html'; return; }
+  const btn = document.getElementById('bookmark-btn');
+  const isActive = btn.classList.contains('active');
+  if (isActive) {
+    await db.from('bookmarks').delete().eq('user_id', currentUser.id).eq('book_id', bookId);
+    toast('Removed from library');
+  } else {
+    await db.from('bookmarks').insert({ user_id: currentUser.id, book_id: bookId });
+    toast('Saved to your library', 'success');
+  }
+  btn.classList.toggle('active');
+};
+
+// ── Email notify ──
+async function checkNotify() {
+  const { data } = await db.from('email_subscriptions').select('id').eq('user_id', currentUser.id).eq('book_id', bookId).eq('active', true).single();
+  document.getElementById('notify-btn').classList.toggle('active', !!data);
+}
+window.toggleNotify = async () => {
+  if (!currentUser) { location.href = '/login.html'; return; }
+  const btn = document.getElementById('notify-btn');
+  const isActive = btn.classList.contains('active');
+  if (isActive) {
+    await db.from('email_subscriptions').update({active:false}).eq('user_id', currentUser.id).eq('book_id', bookId);
+    toast('Notifications off');
+  } else {
+    await db.from('email_subscriptions').upsert({
+      user_id: currentUser.id, book_id: bookId, email: currentUser.email, active: true
+    }, { onConflict: 'user_id,book_id' });
+    toast('You\'ll be notified of new chapters!', 'success');
+  }
+  btn.classList.toggle('active');
+};
+
+// ── Likes count (sum of all chapter likes) ──
+async function loadLikesCount() {
+  const { count } = await db.from('likes')
+    .select('id, chapters!inner(book_id)', {count:'exact',head:true})
+    .eq('chapters.book_id', bookId);
+  document.getElementById('stat-likes').textContent = count ?? 0;
+}
+
+loadBook();
+</script>
+</body>
+</html>
