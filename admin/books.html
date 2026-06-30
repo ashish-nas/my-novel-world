@@ -205,6 +205,17 @@ window.saveBook = async () => {
   const title = document.getElementById('b-title').value.trim();
   if (!title) { toast('Please enter a title', 'error'); return; }
 
+  // ── TEMP DEBUG — shows session info in a popup ──
+  const { data: { session } } = await db.auth.getSession();
+  alert(
+    'DEBUG INFO:\n\n' +
+    'Has session: ' + (!!session) + '\n' +
+    'User ID: ' + (session?.user?.id ?? 'NONE') + '\n' +
+    'Email: ' + (session?.user?.email ?? 'NONE') + '\n' +
+    'Access token starts with: ' + (session?.access_token?.slice(0,20) ?? 'NONE')
+  );
+  // ── END DEBUG ──
+
   const payload = {
     title,
     slug: slugify(title),
