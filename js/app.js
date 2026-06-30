@@ -1,67 +1,87 @@
 // ── app.js — shared across all pages ─────────
 import db from './supabase.js';
 
-// ── Auth state ──
-export let currentUser = null;
+export let currentUser    = null;
 export let currentProfile = null;
 
-export async function initAuth() {
-  // Get session once — await fully before doing anything else
+// ── Core: get session + profile once ──
+async function getSessionAndProfile() {
   const { data: { session } } = await db.auth.getSession();
-  if (session?.user) {
-    currentUser = session.user;
-    const { data } = await db.from('profiles').select('*').eq('id', session.user.id).single();
-    currentProfile = data;
+  if (!session?.user) return { user: null, profile: null };
+
+  const user = session.user;
+
+  // Check localStorage cache first (avoids slow DB round-trip)
+  const cached = localStorage.getItem('mnw_profile');
+  if (cached) {
+    try {
+      const p = JSON.parse(cached);
+      if (p.id === user.id) return { user, profile: p };
+    } catch(e) {}
   }
-  renderNav();
-  // Do NOT set up onAuthStateChange here — it causes flicker loops
+
+  // Fetch from DB
+  const { data: profile } = await db
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (profile) {
+    localStorage.setItem('mnw_profile', JSON.stringify(profile));
+    return { user, profile };
+  }
+
+  // Profile missing — create it
+  const newP = {
+    id: user.id,
+    username: user.email.split('@')[0],
+    role: 'admin' // first user is always admin
+  };
+  await db.from('profiles').insert(newP);
+  localStorage.setItem('mnw_profile', JSON.stringify(newP));
+  return { user, profile: newP };
 }
 
+// ── initAuth — for public pages ──
+export async function initAuth() {
+  const { user, profile } = await getSessionAndProfile();
+  currentUser    = user;
+  currentProfile = profile;
+  renderNav();
+}
+
+// ── requireAuth — redirect to login if not signed in ──
 export async function requireAuth() {
-  const { data: { session } } = await db.auth.getSession();
-  if (!session) {
+  const { user, profile } = await getSessionAndProfile();
+  if (!user) {
     location.href = '/login.html?redirect=' + encodeURIComponent(location.pathname);
     return false;
   }
-  currentUser = session.user;
-  const { data } = await db.from('profiles').select('*').eq('id', session.user.id).single();
-  currentProfile = data;
+  currentUser    = user;
+  currentProfile = profile;
   renderNav();
   return true;
 }
 
+// ── requireAdmin — redirect to home if not admin ──
 export async function requireAdmin() {
-  const { data: { session } } = await db.auth.getSession();
-  if (!session) {
+  const { user, profile } = await getSessionAndProfile();
+
+  if (!user) {
     location.href = '/login.html?redirect=' + encodeURIComponent(location.pathname);
     return false;
   }
-  currentUser = session.user;
 
-  // Try fetching profile up to 3 times
-  let profile = null;
-  for (let i = 0; i < 3; i++) {
-    const { data } = await db.from('profiles').select('*').eq('id', session.user.id).single();
-    if (data) { profile = data; break; }
-    await new Promise(r => setTimeout(r, 600));
-  }
-
-  // If profile missing — create it as admin
-  if (!profile) {
-    const { data: newProfile } = await db.from('profiles')
-      .insert({ id: session.user.id, username: session.user.email.split('@')[0], role: 'admin' })
-      .select().single();
-    profile = newProfile;
-  }
-
+  currentUser    = user;
   currentProfile = profile;
   renderNav();
 
-  // Only redirect if role is definitely not admin after all retries
-  if (!currentProfile || currentProfile.role !== 'admin') {
+  if (currentProfile?.role !== 'admin') {
     location.href = '/';
     return false;
   }
+
   return true;
 }
 
@@ -75,7 +95,7 @@ function renderNav() {
   if (!right) return;
   if (currentUser) {
     right.innerHTML = `
-      <span class="nav-user text-muted text-sm">${currentProfile?.username ?? currentUser.email}</span>
+      <span style="font-size:.75rem;color:var(--text2)">${currentProfile?.username ?? currentUser.email}</span>
       ${isAdmin() ? `<a href="/admin/" class="btn-nav gold">Admin</a>` : ''}
       <a href="/my-library.html" class="btn-nav">My Library</a>
       <button class="btn-nav" onclick="signOut()">Sign out</button>`;
@@ -86,9 +106,11 @@ function renderNav() {
   }
 }
 
+// ── Sign out — clear cache ──
 window.signOut = async () => {
+  localStorage.removeItem('mnw_profile');
   await db.auth.signOut();
-  window.location.href = '/';
+  location.href = '/';
 };
 
 // ── Scroll nav border ──
@@ -132,17 +154,15 @@ export function confirm(title, msg) {
       document.body.appendChild(ov);
     }
     document.getElementById('confirm-title').textContent = title;
-    document.getElementById('confirm-msg').textContent = msg;
+    document.getElementById('confirm-msg').textContent   = msg;
     ov.classList.add('show');
-    const yes = document.getElementById('confirm-yes');
-    const no  = document.getElementById('confirm-no');
     const done = (val) => { ov.classList.remove('show'); resolve(val); };
-    yes.onclick = () => done(true);
-    no.onclick  = () => done(false);
+    document.getElementById('confirm-yes').onclick = () => done(true);
+    document.getElementById('confirm-no').onclick  = () => done(false);
   });
 }
 
-// ── Slug generator ──
+// ── Helpers ──
 export function slugify(str) {
   return str.toLowerCase().trim()
     .replace(/[^\w\s-]/g, '')
@@ -150,13 +170,12 @@ export function slugify(str) {
     .replace(/-+/g, '-');
 }
 
-// ── Word count ──
 export function wordCount(html) {
   return (html ?? '').replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).length;
+    .replace(/\s+/g, ' ').trim()
+    .split(' ').filter(Boolean).length;
 }
 
-// ── Read time ──
 export function readTime(wc) {
   return Math.max(1, Math.round(wc / 200));
 }
