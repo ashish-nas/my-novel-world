@@ -470,20 +470,43 @@ const GENRE_COLORS = {
 let allBooks = [];
 
 async function loadBooks() {
-  const { data, error } = await db
+  // First fetch books
+  const { data: books, error } = await db
     .from('books')
-    .select('id, title, slug, genre, description, cover_url, symbol, color, published_at, volumes(id, chapters(id))')
+    .select('id, title, slug, genre, description, cover_url, symbol, color, published_at')
     .eq('published', true)
     .order('sort_order');
 
-  if (error || !data) {
+  if (error || !books?.length) {
     renderEmpty(); return;
   }
 
-  allBooks = data;
-  buildGenreFilters(data);
-  renderBooks(data);
-  updateCount(data.length);
+  // Then fetch volumes and chapters counts separately
+  const bookIds = books.map(b => b.id);
+
+  const { data: volumes } = await db
+    .from('volumes')
+    .select('id, book_id')
+    .in('book_id', bookIds);
+
+  const volIds = (volumes || []).map(v => v.id);
+
+  const { data: chapters } = volIds.length ? await db
+    .from('chapters')
+    .select('id, volume_id')
+    .in('volume_id', volIds)
+    .eq('published', true) : { data: [] };
+
+  // Attach counts to each book
+  allBooks = books.map(b => {
+    const bookVols = (volumes || []).filter(v => v.book_id === b.id);
+    const bookChs  = (chapters || []).filter(c => bookVols.some(v => v.id === c.volume_id));
+    return { ...b, _volCount: bookVols.length, _chCount: bookChs.length };
+  });
+
+  buildGenreFilters(allBooks);
+  renderBooks(allBooks);
+  updateCount(allBooks.length);
 }
 
 function buildGenreFilters(books) {
@@ -502,13 +525,12 @@ function renderBooks(books) {
   const grid = document.getElementById('books-grid');
   if (!books.length) { renderEmpty(); return; }
 
-  // Check which books are "new" (published in last 14 days)
   const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
   grid.innerHTML = books.map(b => {
-    const bg = b.color || GENRE_COLORS[b.genre] || '#111114';
-    const volCount = b.volumes?.length ?? 0;
-    const chCount  = b.volumes?.reduce((s,v) => s + (v.chapters?.length ?? 0), 0) ?? 0;
+    const bg     = b.color || GENRE_COLORS[b.genre] || '#111114';
+    const volCount = b._volCount ?? 0;
+    const chCount  = b._chCount  ?? 0;
     const isNew    = b.published_at && new Date(b.published_at) > twoWeeksAgo;
 
     return `
@@ -526,8 +548,7 @@ function renderBooks(books) {
       <div class="book-info">
         <div class="book-title">${b.title}</div>
         <div class="book-meta">
-          <span>${volCount}</span> vol
-          · <span>${chCount}</span> ch
+          <span>${volCount}</span> vol · <span>${chCount}</span> ch
         </div>
       </div>
     </div>`;
