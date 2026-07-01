@@ -475,7 +475,7 @@ async function loadBooks() {
     .from('books')
     .select('id, title, slug, genre, description, cover_url, symbol, color, published_at')
     .eq('published', true)
-    .order('sort_order');
+    .order('created_at', { ascending: true });
 
   if (error || !books?.length) {
     console.log('Books fetch error:', error);
