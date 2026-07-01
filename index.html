@@ -473,7 +473,7 @@ async function loadBooks() {
   // First fetch books
   const { data: books, error } = await db
     .from('books')
-    .select('id, title, slug, genre, description, cover_url, symbol, color, published_at')
+    .select('id, title, slug, genre, description, cover_url, symbol, color')
     .eq('published', true)
     .order('created_at', { ascending: true });
 
@@ -528,13 +528,10 @@ function renderBooks(books) {
   const grid = document.getElementById('books-grid');
   if (!books.length) { renderEmpty(); return; }
 
-  const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-
   grid.innerHTML = books.map(b => {
-    const bg     = b.color || GENRE_COLORS[b.genre] || '#111114';
+    const bg       = b.color || GENRE_COLORS[b.genre] || '#111114';
     const volCount = b._volCount ?? 0;
     const chCount  = b._chCount  ?? 0;
-    const isNew    = b.published_at && new Date(b.published_at) > twoWeeksAgo;
 
     return `
     <div class="book-card fade-up" data-genre="${b.genre}" onclick="location.href='/book.html?id=${b.id}'">
@@ -544,7 +541,6 @@ function renderBooks(books) {
           : `<div class="book-symbol">${b.symbol || '✦'}</div>
              <div class="book-cover-title">${b.title}</div>`
         }
-        ${isNew ? `<div class="book-new-badge">NEW</div>` : ''}
         <div class="book-genre-badge">${b.genre || ''}</div>
         <div class="book-cover-author">MY NOVEL WORLD</div>
       </div>
