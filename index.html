@@ -478,8 +478,11 @@ async function loadBooks() {
     .order('sort_order');
 
   if (error || !books?.length) {
+    console.log('Books fetch error:', error);
+    console.log('Books data:', books);
     renderEmpty(); return;
   }
+  console.log('Books fetched:', books.length, books);
 
   // Then fetch volumes and chapters counts separately
   const bookIds = books.map(b => b.id);
