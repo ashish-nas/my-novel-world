@@ -283,10 +283,11 @@ async function loadContinue() {
 
 // ── Bookmarked Novels ──
 async function loadBookmarks() {
-  const { data } = await db.from('bookmarks')
+  const { data, error } = await db.from('bookmarks')
     .select('id, created_at, books(id, title, genre, cover_url, color, symbol, published)')
     .eq('user_id', currentUser.id).order('created_at', { ascending: false });
 
+  if (error) console.error('loadBookmarks failed:', error.message);
   const list = (data || []).filter(b => b.books?.published);
   renderBookmarks(list);
 }
@@ -314,7 +315,8 @@ function renderBookmarks(list) {
 }
 
 window.removeBookmark = async (bookId) => {
-  await db.from('bookmarks').delete().eq('user_id', currentUser.id).eq('book_id', bookId);
+  const { error } = await db.from('bookmarks').delete().eq('user_id', currentUser.id).eq('book_id', bookId);
+  if (error) { console.error('Bookmark delete failed:', error.message); toast('Error: ' + error.message, 'error'); return; }
   toast('Removed from bookmarks');
   loadBookmarks();
 };

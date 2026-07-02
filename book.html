@@ -346,7 +346,7 @@ const GENRE_COLORS = {
 // ── Load book ──
 async function loadBook() {
   const { data, error } = await db.from('books')
-    .select('*, volumes(id, title, description, sort_order, chapters(id, title, word_count, published))')
+    .select('*, volumes(id, title, description, chapters(id, title, word_count, published))')
     .eq('id', bookId).eq('published', true).single();
 
   if (error || !data) {
@@ -374,7 +374,7 @@ async function loadBook() {
   document.getElementById('book-description').textContent = data.description || '';
 
   // Stats
-  const volumes = (data.volumes || []).filter(v => v).sort((a,b)=>a.sort_order-b.sort_order);
+  const volumes = (data.volumes || []).filter(v => v);
   const publishedVolumes = volumes; // volumes don't have published filter applied here for simplicity
   const allChapters = volumes.flatMap(v => (v.chapters||[]).filter(c=>c.published));
   const totalWords = allChapters.reduce((s,c)=>s+(c.word_count||0),0);
@@ -387,7 +387,7 @@ async function loadBook() {
   // Start reading button → first chapter of first volume
   const firstVol = volumes.find(v => (v.chapters||[]).some(c=>c.published));
   if (firstVol) {
-    const firstCh = firstVol.chapters.filter(c=>c.published).sort((a,b)=>(a.sort_order??0)-(b.sort_order??0))[0];
+    const firstCh = firstVol.chapters.filter(c=>c.published)[0];
     document.getElementById('start-reading-btn').href = `/chapter.html?id=${firstCh.id}`;
   } else {
     document.getElementById('start-reading-btn').style.display = 'none';
@@ -519,7 +519,8 @@ window.submitReview = async () => {
 
 // ── Bookmark ──
 async function checkBookmark() {
-  const { data } = await db.from('bookmarks').select('id').eq('user_id', currentUser.id).eq('book_id', bookId).single();
+  const { data, error } = await db.from('bookmarks').select('id').eq('user_id', currentUser.id).eq('book_id', bookId).single();
+  if (error && error.code !== 'PGRST116') console.error('checkBookmark failed:', error.message); // PGRST116 = no row found, which is expected/fine
   document.getElementById('bookmark-btn').classList.toggle('active', !!data);
 }
 window.toggleBookmark = async () => {
@@ -527,10 +528,12 @@ window.toggleBookmark = async () => {
   const btn = document.getElementById('bookmark-btn');
   const isActive = btn.classList.contains('active');
   if (isActive) {
-    await db.from('bookmarks').delete().eq('user_id', currentUser.id).eq('book_id', bookId);
+    const { error } = await db.from('bookmarks').delete().eq('user_id', currentUser.id).eq('book_id', bookId);
+    if (error) { console.error('Bookmark delete failed:', error.message); toast('Error: ' + error.message, 'error'); return; }
     toast('Removed from library');
   } else {
-    await db.from('bookmarks').insert({ user_id: currentUser.id, book_id: bookId });
+    const { error } = await db.from('bookmarks').insert({ user_id: currentUser.id, book_id: bookId });
+    if (error) { console.error('Bookmark insert failed:', error.message); toast('Error: ' + error.message, 'error'); return; }
     toast('Saved to your library', 'success');
   }
   btn.classList.toggle('active');

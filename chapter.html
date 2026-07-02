@@ -376,9 +376,11 @@ window.toggleLike = async () => {
   const btn = document.getElementById('like-btn');
   const isActive = btn.classList.contains('active');
   if (isActive) {
-    await db.from('likes').delete().eq('chapter_id', chapterId).eq('user_id', currentUser.id);
+    const { error } = await db.from('likes').delete().eq('chapter_id', chapterId).eq('user_id', currentUser.id);
+    if (error) { console.error('Like delete failed:', error.message); toast('Error: ' + error.message, 'error'); return; }
   } else {
-    await db.from('likes').insert({ chapter_id: chapterId, user_id: currentUser.id });
+    const { error } = await db.from('likes').insert({ chapter_id: chapterId, user_id: currentUser.id });
+    if (error) { console.error('Like insert failed:', error.message); toast('Error: ' + error.message, 'error'); return; }
   }
   btn.classList.toggle('active');
   loadLikeCount();
@@ -415,14 +417,16 @@ window.toggleReaction = async (type) => {
 
   if (myReaction === type) {
     // Clicking the same reaction again removes it
-    await db.from('reactions').delete().eq('chapter_id', chapterId).eq('user_id', currentUser.id);
+    const { error } = await db.from('reactions').delete().eq('chapter_id', chapterId).eq('user_id', currentUser.id);
+    if (error) { console.error('Reaction delete failed:', error.message); toast('Error: ' + error.message, 'error'); return; }
     document.getElementById(`reaction-${type}`).classList.remove('active');
     myReaction = null;
   } else {
-    await db.from('reactions').upsert(
+    const { error } = await db.from('reactions').upsert(
       { chapter_id: chapterId, user_id: currentUser.id, reaction_type: type },
       { onConflict: 'user_id,chapter_id' }
     );
+    if (error) { console.error('Reaction upsert failed:', error.message); toast('Error: ' + error.message, 'error'); return; }
     if (myReaction) document.getElementById(`reaction-${myReaction}`)?.classList.remove('active');
     document.getElementById(`reaction-${type}`).classList.add('active');
     myReaction = type;
