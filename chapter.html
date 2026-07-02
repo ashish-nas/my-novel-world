@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loading... — My Novel World</title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  /* ── Top progress bar ── */
+  .read-progress {
+    position: fixed; top: var(--nav-h); left: 0; right: 0; height: 3px;
+    background: var(--bg3); z-index: 99;
+  }
+  .read-progress-fill {
+    height: 100%; width: 0%; background: linear-gradient(90deg, var(--gold), var(--gold2));
+    transition: width 0.1s linear;
+  }
+
+  /* ── Sticky reading toolbar ── */
+  .reading-toolbar {
+    position: sticky; top: calc(var(--nav-h) + 3px); z-index: 50;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 0.85rem 0; background: rgba(10,10,11,0.94); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border); margin-bottom: 2rem; flex-wrap: wrap;
+  }
+  .rt-breadcrumb {
+    font-size: 0.76rem; color: var(--text3); display: flex; align-items: center; gap: 0.4rem;
+    min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  }
+  .rt-breadcrumb a { color: var(--text2); transition: color 0.2s; }
+  .rt-breadcrumb a:hover { color: var(--gold); }
+  .rt-controls { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+  .rt-btn {
+    width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border2); background: var(--bg2); color: var(--text2);
+    border-radius: var(--radius); cursor: pointer; transition: all 0.2s; font-family: 'Cinzel', serif;
+  }
+  .rt-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .rt-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+  .rt-fsize-a { font-size: 0.65rem; }
+  .rt-fsize-b { font-size: 1rem; }
+
+  /* ── Chapter header ── */
+  .chapter-eyebrow-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; }
+  .chapter-eyebrow {
+    font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.3em;
+    color: var(--gold); text-transform: uppercase;
+  }
+  .chapter-eyebrow a { color: var(--gold); }
+  .chapter-title-main {
+    font-family: 'Cormorant Garamond', serif; font-size: clamp(1.9rem, 4.5vw, 2.9rem);
+    font-weight: 300; line-height: 1.15; margin-bottom: 1rem; max-width: var(--read-w);
+  }
+  .chapter-meta-row {
+    display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--text3);
+    padding-bottom: 2rem; margin-bottom: 2.5rem; border-bottom: 1px solid var(--border);
+    max-width: var(--read-w);
+  }
+  .chapter-meta-row span { display: flex; align-items: center; gap: 0.35rem; }
+  .chapter-meta-row i { color: var(--gold); }
+
+  /* ── Content ── */
+  .reading-container { max-width: var(--read-w); margin: 0 auto; }
+  .chapter-content {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: var(--content-fs, 1.15rem);
+    line-height: 1.9; color: var(--text);
+  }
+  .chapter-content p { margin-bottom: 1.3em; }
+  .chapter-content p:first-of-type::first-letter {
+    float: left; font-family: 'Cormorant Garamond', serif; font-size: 3.4em;
+    line-height: 0.82; padding: 0.05em 0.1em 0 0; color: var(--gold); font-weight: 600;
+  }
+  .chapter-content h2, .chapter-content h3 { font-weight: 400; margin: 1.6em 0 0.8em; color: var(--text); }
+  .chapter-content blockquote {
+    border-left: 2px solid var(--gold); padding-left: 1.25rem; margin: 1.5em 0;
+    color: var(--text2); font-style: italic;
+  }
+  .chapter-content ul, .chapter-content ol { margin: 0 0 1.3em 1.4em; }
+
+  .end-ornament {
+    text-align: center; color: var(--gold); opacity: 0.5; font-size: 0.9rem;
+    letter-spacing: 0.5em; margin: 3rem 0 2.5rem;
+  }
+
+  /* ── Like + reactions ── */
+  .chapter-actions {
+    display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+    padding: 2rem 0; margin-bottom: 2.5rem;
+  }
+  .like-btn {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.7rem 1.5rem; border: 1px solid var(--border2); background: var(--bg2);
+    color: var(--text2); border-radius: 999px; cursor: pointer; transition: all 0.2s;
+    font-size: 0.85rem;
+  }
+  .like-btn:hover { border-color: var(--red); color: #d97a8a; }
+  .like-btn.active { border-color: var(--red); color: #e08090; background: rgba(139,38,53,0.12); }
+  .like-btn.active i { color: #e08090; }
+
+  .reaction-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; }
+  .reaction-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+    padding: 0.6rem 0.9rem; border: 1px solid var(--border2); background: var(--bg2);
+    border-radius: var(--radius-lg); cursor: pointer; transition: all 0.2s; min-width: 76px;
+  }
+  .reaction-btn:hover { border-color: var(--gold); }
+  .reaction-btn.active { border-color: var(--gold); background: var(--gold-dim); }
+  .reaction-emoji { font-size: 1.3rem; }
+  .reaction-label { font-size: 0.62rem; color: var(--text3); text-align: center; }
+  .reaction-count { font-size: 0.72rem; color: var(--text2); }
+
+  /* ── Comments ── */
+  .comments-section { max-width: var(--read-w); margin: 0 auto 3rem; }
+  .comments-heading {
+    font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.2em;
+    color: var(--text3); text-transform: uppercase; margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);
+  }
+  .comment-form-box { margin-bottom: 2rem; }
+  .comment-item { padding: 1.1rem 0; border-bottom: 1px solid var(--border); }
+  .comment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+  .comment-author { font-size: 0.85rem; color: var(--text); }
+  .comment-date { font-size: 0.7rem; color: var(--text3); }
+  .comment-text { font-size: 0.88rem; color: var(--text2); line-height: 1.7; }
+  .login-prompt { font-size: 0.85rem; color: var(--text2); padding: 1rem 0; }
+  .login-prompt a { color: var(--gold); }
+
+  /* ── Prev / next chapter nav ── */
+  .chapter-nav-footer {
+    max-width: var(--read-w); margin: 0 auto; display: flex; justify-content: space-between;
+    gap: 1rem; padding-top: 2rem; border-top: 1px solid var(--border); margin-bottom: 4rem;
+  }
+  .cnav-btn {
+    flex: 1; padding: 1rem 1.25rem; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); transition: all 0.2s; max-width: 48%;
+  }
+  .cnav-btn:hover { border-color: var(--gold); }
+  .cnav-btn.next { text-align: right; margin-left: auto; }
+  .cnav-label {
+    font-family: 'Cinzel', serif; font-size: 0.55rem; letter-spacing: 0.2em;
+    color: var(--text3); text-transform: uppercase; margin-bottom: 0.4rem;
+  }
+  .cnav-title { font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--text); }
+
+  @media (max-width: 768px) {
+    .chapter-content { font-size: calc(var(--content-fs, 1.15rem) - 0.05rem); }
+    .reading-toolbar { top: calc(var(--nav-h) + 3px); }
+    .cnav-btn { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="read-progress"><div class="read-progress-fill" id="progress-fill"></div></div>
+
+<nav class="nav" id="main-nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <ul class="nav-links">
+    <li><a href="/">Library</a></li>
+    <li><a href="/updates.html">Updates</a></li>
+    <li><a href="/reading-order.html">Reading Order</a></li>
+    <li><a href="/qa.html">Q&A</a></li>
+  </ul>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="page" style="padding-top:var(--nav-h)">
+  <div class="container">
+
+    <div class="reading-toolbar">
+      <div class="rt-breadcrumb" id="rt-breadcrumb">
+        <a href="/">Library</a><span>›</span><a href="#" id="bc-book">Novel</a>
+      </div>
+      <div class="rt-controls">
+        <button class="rt-btn rt-fsize-a" id="font-dec" title="Smaller text">A−</button>
+        <button class="rt-btn rt-fsize-b" id="font-inc" title="Larger text">A+</button>
+        <button class="rt-btn" id="tts-btn" title="Listen to this chapter"><i class="ti ti-headphones"></i></button>
+      </div>
+    </div>
+
+    <div class="chapter-eyebrow-row">
+      <span class="chapter-eyebrow"><a href="#" id="bc-volume">Volume</a></span>
+    </div>
+    <h1 class="chapter-title-main" id="chapter-title">Loading...</h1>
+    <div class="chapter-meta-row">
+      <span id="meta-position"><i class="ti ti-list-numbers"></i> —</span>
+      <span id="meta-time"><i class="ti ti-clock"></i> —</span>
+      <span id="meta-words"><i class="ti ti-typography"></i> —</span>
+      <span id="meta-date" style="display:none"><i class="ti ti-calendar"></i> —</span>
+    </div>
+
+    <div class="reading-container">
+      <div class="chapter-content" id="chapter-content">
+        <p>Loading chapter...</p>
+      </div>
+
+      <div class="end-ornament">✦ ✦ ✦</div>
+
+      <div class="chapter-actions">
+        <button class="like-btn" id="like-btn" onclick="toggleLike()">
+          <i class="ti ti-heart"></i> <span id="like-count">0</span> <span id="like-label">Like this chapter</span>
+        </button>
+        <div class="reaction-row" id="reaction-row"></div>
+      </div>
+    </div>
+
+    <div class="comments-section">
+      <div class="comments-heading">Comments</div>
+      <div class="comment-form-box" id="comment-form-box" style="display:none">
+        <textarea id="comment-text" class="form-input" rows="3" placeholder="Share your thoughts on this chapter..."></textarea>
+        <button class="btn btn-primary mt-2" onclick="postComment()">Post Comment</button>
+      </div>
+      <p class="login-prompt" id="login-prompt" style="display:none">
+        <a href="/login.html">Sign in</a> to join the conversation.
+      </p>
+      <div id="comments-list">
+        <p class="text-sm text-muted" style="padding:1rem 0">No comments yet. Be the first to share your thoughts.</p>
+      </div>
+    </div>
+
+    <div class="chapter-nav-footer" id="chapter-nav-footer">
+      <a class="cnav-btn prev" id="nav-prev" style="display:none">
+        <div class="cnav-label">← Previous</div>
+        <div class="cnav-title" id="nav-prev-title"></div>
+      </a>
+      <a class="cnav-btn next" id="nav-next" style="display:none">
+        <div class="cnav-label">Next →</div>
+        <div class="cnav-title" id="nav-next-title"></div>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import db from '/js/supabase.js';
+import { initAuth, toast, readTime, wordCount } from '/js/app.js';
+
+const params    = new URLSearchParams(location.search);
+const chapterId = params.get('id');
+if (!chapterId) location.href = '/';
+
+await initAuth();
+const { currentUser } = await import('/js/app.js');
+
+const REACTIONS = [
+  { type: 'loved',     emoji: '❤️', label: 'Loved it' },
+  { type: 'shocked',   emoji: '😱', label: 'Shocked' },
+  { type: 'cried',     emoji: '😢', label: 'Cried' },
+  { type: 'laughed',   emoji: '😂', label: 'Laughed' },
+  { type: 'angry',     emoji: '😤', label: 'Angry' },
+  { type: 'mindblown', emoji: '🤯', label: 'Mind-blown' },
+];
+
+let chapter = null;
+let myReaction = null;
+
+// ── Font size (A− / A+), saved to localStorage ──
+const FONT_SIZES = [15, 17, 19, 21, 23, 25, 27];
+let fontIdx = parseInt(localStorage.getItem('mnw_font_idx'));
+if (isNaN(fontIdx) || fontIdx < 0 || fontIdx >= FONT_SIZES.length) fontIdx = 2; // 19px default
+applyFontSize();
+
+function applyFontSize() {
+  document.documentElement.style.setProperty('--content-fs', FONT_SIZES[fontIdx] + 'px');
+  localStorage.setItem('mnw_font_idx', fontIdx);
+}
+document.getElementById('font-dec').onclick = () => { if (fontIdx > 0) { fontIdx--; applyFontSize(); } };
+document.getElementById('font-inc').onclick = () => { if (fontIdx < FONT_SIZES.length - 1) { fontIdx++; applyFontSize(); } };
+
+// ── Load chapter ──
+async function loadChapter() {
+  const { data, error } = await db.from('chapters')
+    .select('*, volumes(id, title, sort_order, published, book_id, books(id, title))')
+    .eq('id', chapterId).eq('published', true).single();
+
+  if (error || !data) {
+    document.getElementById('chapter-title').textContent = 'Chapter not found';
+    document.getElementById('chapter-content').innerHTML = '<p>This chapter may have been removed or is not yet published.</p>';
+    document.querySelector('.chapter-actions').style.display = 'none';
+    document.querySelector('.comments-section').style.display = 'none';
+    return;
+  }
+
+  chapter = data;
+  document.title = data.title + ' — My Novel World';
+
+  const book = data.volumes?.books;
+  const bcBook = document.getElementById('bc-book');
+  const bcVol  = document.getElementById('bc-volume');
+  if (book) { bcBook.textContent = book.title; bcBook.href = `/book.html?id=${book.id}`; }
+  bcVol.textContent = data.volumes?.title ?? 'Volume';
+  bcVol.href = `/volume.html?id=${data.volumes?.id}`;
+
+  document.getElementById('chapter-title').textContent = data.title;
+  document.getElementById('chapter-content').innerHTML = data.content || '<p>This chapter has no content yet.</p>';
+
+  const wc = data.word_count || wordCount(data.content);
+  document.getElementById('meta-time').innerHTML  = `<i class="ti ti-clock"></i> ${readTime(wc)} min read`;
+  document.getElementById('meta-words').innerHTML = `<i class="ti ti-typography"></i> ${wc.toLocaleString()} words`;
+  if (data.published_at) {
+    const dateEl = document.getElementById('meta-date');
+    dateEl.innerHTML = `<i class="ti ti-calendar"></i> ${new Date(data.published_at).toLocaleDateString()}`;
+    dateEl.style.display = 'flex';
+  }
+
+  document.getElementById('like-count').textContent = data.likes_count ?? 0;
+
+  renderReactions();
+  loadLikeCount();
+  loadReactionCounts();
+  loadComments();
+  if (book?.id && data.volumes?.sort_order != null) loadChapterNav(book.id, data.id);
+
+  if (currentUser) {
+    checkMyLike();
+    checkMyReaction();
+    document.getElementById('comment-form-box').style.display = 'block';
+    loadProgress();
+  } else {
+    document.getElementById('login-prompt').style.display = 'block';
+  }
+}
+
+// ── Chapter position + prev/next (flattened across the whole book) ──
+async function loadChapterNav(bookId) {
+  const { data } = await db.from('books')
+    .select('volumes(id, title, sort_order, published, chapters(id, title, sort_order, published))')
+    .eq('id', bookId).single();
+
+  if (!data?.volumes) return;
+
+  const flat = data.volumes
+    .filter(v => v.published)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .flatMap(v => (v.chapters || [])
+      .filter(c => c.published)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(c => ({ id: c.id, title: c.title })));
+
+  const idx = flat.findIndex(c => c.id === chapterId);
+  if (idx === -1) return;
+
+  document.getElementById('meta-position').innerHTML =
+    `<i class="ti ti-list-numbers"></i> Chapter ${idx + 1} of ${flat.length}`;
+
+  if (idx > 0) {
+    const p = flat[idx - 1];
+    const el = document.getElementById('nav-prev');
+    el.href = `/chapter.html?id=${p.id}`;
+    document.getElementById('nav-prev-title').textContent = p.title;
+    el.style.display = 'block';
+  }
+  if (idx < flat.length - 1) {
+    const n = flat[idx + 1];
+    const el = document.getElementById('nav-next');
+    el.href = `/chapter.html?id=${n.id}`;
+    document.getElementById('nav-next-title').textContent = n.title;
+    el.style.display = 'block';
+  }
+}
+
+// ── Like ──
+async function loadLikeCount() {
+  const { count } = await db.from('likes').select('id', { count: 'exact', head: true }).eq('chapter_id', chapterId);
+  document.getElementById('like-count').textContent = count ?? 0;
+}
+async function checkMyLike() {
+  const { data } = await db.from('likes').select('id').eq('chapter_id', chapterId).eq('user_id', currentUser.id).single();
+  document.getElementById('like-btn').classList.toggle('active', !!data);
+}
+window.toggleLike = async () => {
+  if (!currentUser) { location.href = '/login.html?redirect=' + encodeURIComponent(location.pathname + location.search); return; }
+  const btn = document.getElementById('like-btn');
+  const isActive = btn.classList.contains('active');
+  if (isActive) {
+    await db.from('likes').delete().eq('chapter_id', chapterId).eq('user_id', currentUser.id);
+  } else {
+    await db.from('likes').insert({ chapter_id: chapterId, user_id: currentUser.id });
+  }
+  btn.classList.toggle('active');
+  loadLikeCount();
+};
+
+// ── Reactions ──
+function renderReactions() {
+  const row = document.getElementById('reaction-row');
+  row.innerHTML = REACTIONS.map(r => `
+    <button class="reaction-btn" id="reaction-${r.type}" onclick="toggleReaction('${r.type}')">
+      <span class="reaction-emoji">${r.emoji}</span>
+      <span class="reaction-label">${r.label}</span>
+      <span class="reaction-count" id="reaction-count-${r.type}">0</span>
+    </button>`).join('');
+}
+async function loadReactionCounts() {
+  const { data } = await db.from('reactions').select('reaction_type').eq('chapter_id', chapterId);
+  const counts = {};
+  (data || []).forEach(r => { counts[r.reaction_type] = (counts[r.reaction_type] || 0) + 1; });
+  REACTIONS.forEach(r => {
+    const el = document.getElementById(`reaction-count-${r.type}`);
+    if (el) el.textContent = counts[r.type] || 0;
+  });
+}
+async function checkMyReaction() {
+  const { data } = await db.from('reactions').select('reaction_type').eq('chapter_id', chapterId).eq('user_id', currentUser.id).single();
+  if (data) {
+    myReaction = data.reaction_type;
+    document.getElementById(`reaction-${myReaction}`)?.classList.add('active');
+  }
+}
+window.toggleReaction = async (type) => {
+  if (!currentUser) { location.href = '/login.html?redirect=' + encodeURIComponent(location.pathname + location.search); return; }
+
+  if (myReaction === type) {
+    // Clicking the same reaction again removes it
+    await db.from('reactions').delete().eq('chapter_id', chapterId).eq('user_id', currentUser.id);
+    document.getElementById(`reaction-${type}`).classList.remove('active');
+    myReaction = null;
+  } else {
+    await db.from('reactions').upsert(
+      { chapter_id: chapterId, user_id: currentUser.id, reaction_type: type },
+      { onConflict: 'user_id,chapter_id' }
+    );
+    if (myReaction) document.getElementById(`reaction-${myReaction}`)?.classList.remove('active');
+    document.getElementById(`reaction-${type}`).classList.add('active');
+    myReaction = type;
+  }
+  loadReactionCounts();
+};
+
+// ── Comments ──
+async function loadComments() {
+  const { data } = await db.from('comments')
+    .select('id, content, created_at, profiles(username)')
+    .eq('chapter_id', chapterId).eq('approved', true)
+    .order('created_at', { ascending: false });
+
+  const list = document.getElementById('comments-list');
+  if (!data?.length) {
+    list.innerHTML = '<p class="text-sm text-muted" style="padding:1rem 0">No comments yet. Be the first to share your thoughts.</p>';
+    return;
+  }
+  list.innerHTML = data.map(c => `
+    <div class="comment-item">
+      <div class="comment-header">
+        <span class="comment-author">${c.profiles?.username ?? 'Reader'}</span>
+        <span class="comment-date">${new Date(c.created_at).toLocaleDateString()}</span>
+      </div>
+      <div class="comment-text">${c.content}</div>
+    </div>`).join('');
+}
+window.postComment = async () => {
+  if (!currentUser) { location.href = '/login.html?redirect=' + encodeURIComponent(location.pathname + location.search); return; }
+  const text = document.getElementById('comment-text').value.trim();
+  if (!text) { toast('Write something first', 'error'); return; }
+
+  const { error } = await db.from('comments').insert({
+    chapter_id: chapterId, user_id: currentUser.id, content: text, approved: false
+  });
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+
+  document.getElementById('comment-text').value = '';
+  toast('Comment submitted — it will appear once approved', 'success');
+};
+
+// ── Text-to-speech ──
+let utterance = null;
+let ttsState = 'stopped'; // stopped | playing | paused
+const ttsBtn = document.getElementById('tts-btn');
+
+document.getElementById('tts-btn').onclick = () => {
+  if (!('speechSynthesis' in window)) { toast('Text-to-speech is not supported in this browser', 'error'); return; }
+
+  if (ttsState === 'stopped') {
+    const text = (chapter?.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!text) return;
+    utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.98;
+    utterance.onend = () => { ttsState = 'stopped'; updateTtsBtn(); };
+    speechSynthesis.speak(utterance);
+    ttsState = 'playing';
+  } else if (ttsState === 'playing') {
+    speechSynthesis.pause();
+    ttsState = 'paused';
+  } else if (ttsState === 'paused') {
+    speechSynthesis.resume();
+    ttsState = 'playing';
+  }
+  updateTtsBtn();
+};
+function updateTtsBtn() {
+  ttsBtn.classList.toggle('active', ttsState !== 'stopped');
+  ttsBtn.innerHTML = ttsState === 'playing'
+    ? '<i class="ti ti-player-pause"></i>'
+    : '<i class="ti ti-headphones"></i>';
+}
+window.addEventListener('beforeunload', () => { if ('speechSynthesis' in window) speechSynthesis.cancel(); });
+
+// ── Reading progress: compute, restore, and autosave every 5s ──
+let currentPercent = 0;
+let lastSavedPercent = -1;
+
+function computeScrollPercent() {
+  const scrollable = document.body.scrollHeight - window.innerHeight;
+  if (scrollable <= 0) return 100;
+  return Math.min(100, Math.max(0, (window.scrollY / scrollable) * 100));
+}
+function updateProgressBar() {
+  currentPercent = computeScrollPercent();
+  document.getElementById('progress-fill').style.width = currentPercent + '%';
+}
+window.addEventListener('scroll', () => requestAnimationFrame(updateProgressBar));
+updateProgressBar();
+
+async function loadProgress() {
+  const { data } = await db.from('reading_progress')
+    .select('scroll_percent, completed')
+    .eq('chapter_id', chapterId).eq('user_id', currentUser.id).single();
+
+  if (data && !data.completed && data.scroll_percent > 3) {
+    setTimeout(() => {
+      const scrollable = document.body.scrollHeight - window.innerHeight;
+      window.scrollTo({ top: (data.scroll_percent / 100) * scrollable, behavior: 'auto' });
+    }, 200);
+  }
+}
+async function saveProgress() {
+  if (!currentUser || !chapter) return;
+  const percent = Math.round(currentPercent);
+  if (percent === lastSavedPercent) return;
+  lastSavedPercent = percent;
+  await db.from('reading_progress').upsert({
+    user_id: currentUser.id, chapter_id: chapterId,
+    scroll_percent: percent, completed: percent >= 95,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'user_id,chapter_id' });
+}
+setInterval(saveProgress, 5000);
+window.addEventListener('beforeunload', saveProgress);
+
+loadChapter();
+</script>
+</body>
+</html>
