@@ -44,6 +44,14 @@ async function getSessionAndProfile() {
   return { user, profile: newP };
 }
 
+// ── Reveal page content once an auth gate has passed.
+// Pages that shouldn't flash their content to unauthorized visitors add
+// `<script>document.documentElement.classList.add('auth-pending')</script>`
+// at the very top of <head>; this removes it once requireAuth/requireAdmin succeeds.
+function revealGatedContent() {
+  document.documentElement.classList.remove('auth-pending');
+}
+
 // ── initAuth — for public pages ──
 export async function initAuth() {
   const { user, profile } = await getSessionAndProfile();
@@ -62,6 +70,7 @@ export async function requireAuth() {
   currentUser    = user;
   currentProfile = profile;
   renderNav();
+  revealGatedContent();
   return true;
 }
 
@@ -83,6 +92,7 @@ export async function requireAdmin() {
     return false;
   }
 
+  revealGatedContent();
   return true;
 }
 
@@ -178,5 +188,7 @@ export function wordCount(html) {
 }
 
 export function readTime(wc) {
+  return Math.max(1, Math.round(wc / 200));
+}ort function readTime(wc) {
   return Math.max(1, Math.round(wc / 200));
 }
