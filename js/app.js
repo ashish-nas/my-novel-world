@@ -189,6 +189,4 @@ export function wordCount(html) {
 
 export function readTime(wc) {
   return Math.max(1, Math.round(wc / 200));
-}ort function readTime(wc) {
-  return Math.max(1, Math.round(wc / 200));
 }
