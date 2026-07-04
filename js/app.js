@@ -32,11 +32,12 @@ async function getSessionAndProfile() {
     return { user, profile };
   }
 
-  // Profile missing — create it
+  // Profile missing — create it. New accounts always start as 'reader';
+  // promote your own account to 'admin' once in Supabase → Table Editor (see design doc §10.4).
   const newP = {
     id: user.id,
     username: user.email.split('@')[0],
-    role: 'admin' // first user is always admin
+    role: 'reader'
   };
   await db.from('profiles').insert(newP);
   localStorage.setItem('mnw_profile', JSON.stringify(newP));
