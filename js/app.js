@@ -106,7 +106,7 @@ function renderNav() {
   if (!right) return;
   if (currentUser) {
     right.innerHTML = `
-      <span style="font-size:.75rem;color:var(--text2)">${currentProfile?.username ?? currentUser.email}</span>
+      <a href="/profile.html" class="nav-username" title="View profile">${currentProfile?.username ?? currentUser.email}</a>
       ${isAdmin() ? `<a href="/admin/" class="btn-nav gold">Admin</a>` : ''}
       <a href="/my-library.html" class="btn-nav">My Library</a>
       <button class="btn-nav" onclick="signOut()">Sign out</button>`;

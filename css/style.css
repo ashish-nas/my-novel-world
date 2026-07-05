@@ -47,6 +47,8 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 .nav-links a{font-size:.75rem;letter-spacing:.1em;color:var(--text2);transition:color .2s}
 .nav-links a:hover,.nav-links a.active{color:var(--text)}
 .nav-right{display:flex;align-items:center;gap:1rem}
+.nav-username{font-size:.75rem;color:var(--text2);transition:color .2s}
+.nav-username:hover{color:var(--gold)}
 .btn-nav{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.15em;padding:.45rem 1.1rem;border:1px solid var(--border2);background:none;color:var(--text2);border-radius:var(--radius);transition:all .2s}
 .btn-nav:hover{border-color:var(--gold);color:var(--gold)}
 .btn-nav.gold{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
