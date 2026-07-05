@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile — My Novel World</title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  /* ── Profile header ── */
+  .profile-header {
+    display: flex; gap: 1.75rem; align-items: center; padding: 2rem;
+    margin-bottom: 1.5rem; flex-wrap: wrap;
+  }
+  .avatar-wrap {
+    width: 88px; height: 88px; border-radius: 50%; overflow: hidden; background: var(--gold-dim);
+    border: 2px solid var(--border2); display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; color: var(--gold); flex-shrink: 0;
+  }
+  .avatar-wrap img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-joined { font-size: 0.78rem; color: var(--text3); margin-top: 0.4rem; }
+
+  /* ── Edit card ── */
+  .edit-card { padding: 1.75rem 2rem; margin-bottom: 3rem; }
+  .edit-card-head {
+    font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.2em; color: var(--text3);
+    text-transform: uppercase; margin-bottom: 1.25rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Section headers (shared look with My Library) ── */
+  .lib-section { margin-bottom: 3.5rem; }
+  .lib-section-head {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    margin-bottom: 1.25rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--border);
+  }
+  .lib-section-head h2 {
+    font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em;
+    color: var(--text3); text-transform: uppercase; font-weight: 400;
+  }
+  .lib-section-hint { font-size: 0.75rem; color: var(--text3); }
+  .lib-section-hint a { color: var(--gold); }
+
+  /* ── Stats grid ── */
+  .profile-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
+  .profile-stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; }
+  .profstat-num { font-family: 'Cormorant Garamond', serif; font-size: 1.9rem; color: var(--gold); line-height: 1; margin-bottom: 0.4rem; }
+  .profstat-label {
+    font-family: 'Cinzel', serif; font-size: 0.55rem; letter-spacing: 0.2em;
+    color: var(--text3); text-transform: uppercase;
+  }
+
+  /* ── Comment history ── */
+  .hist-comment-item { padding: 1.1rem 0; border-bottom: 1px solid var(--border); }
+  .hist-comment-item:last-child { border-bottom: none; }
+  .hist-comment-head { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+  .hist-comment-chapter { font-family: 'Cormorant Garamond', serif; font-size: 1.02rem; color: var(--text); transition: color 0.2s; }
+  .hist-comment-chapter:hover { color: var(--gold); }
+  .hist-comment-book { font-size: 0.7rem; color: var(--text3); }
+  .hist-comment-text { font-size: 0.88rem; color: var(--text2); line-height: 1.7; margin-bottom: 0.35rem; }
+  .hist-comment-date { font-size: 0.7rem; color: var(--text3); }
+
+  @media (max-width: 768px) {
+    .profile-header { flex-direction: column; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav" id="main-nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <ul class="nav-links">
+    <li><a href="/">Library</a></li>
+    <li><a href="/updates.html">Updates</a></li>
+    <li><a href="/reading-order.html">Reading Order</a></li>
+    <li><a href="/qa.html">Q&A</a></li>
+  </ul>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="page">
+  <div class="container">
+
+    <!-- Profile header -->
+    <div class="card profile-header fade-up">
+      <div class="avatar-wrap" id="avatar-wrap">?</div>
+      <div>
+        <p class="eyebrow">My Profile</p>
+        <h1 class="section-title" id="profile-username" style="font-size:clamp(1.6rem,3vw,2.2rem)">Loading...</h1>
+        <p class="profile-joined" id="profile-joined"></p>
+      </div>
+    </div>
+
+    <!-- Edit profile -->
+    <div class="card edit-card fade-up">
+      <div class="edit-card-head">Edit Profile</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input id="edit-username" class="form-input" placeholder="Username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Avatar Image URL</label>
+          <input id="edit-avatar" class="form-input" placeholder="https://...">
+          <div class="form-hint">Paste a link to an image — square works best</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+    </div>
+
+    <!-- Reading stats -->
+    <div class="lib-section fade-up">
+      <div class="lib-section-head">
+        <h2>Reading Stats</h2>
+        <span class="lib-section-hint">Manage your weekly goal in <a href="/my-library.html">My Library</a></span>
+      </div>
+      <div class="profile-stats-grid" id="stats-grid">
+        <div class="profile-stat-card"><div class="profstat-num">—</div><div class="profstat-label">Loading</div></div>
+      </div>
+    </div>
+
+    <!-- Comment history -->
+    <div class="lib-section fade-up">
+      <div class="lib-section-head"><h2>Your Comments</h2></div>
+      <div id="comments-history">
+        <div class="empty"><div class="empty-icon">💬</div><p>Loading...</p></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import db from '/js/supabase.js';
+import { requireAuth, toast } from '/js/app.js';
+
+if (!await requireAuth()) throw new Error('Not authenticated');
+const { currentUser, currentProfile } = await import('/js/app.js');
+
+// ── Header (also called again after a successful save) ──
+function renderHeader() {
+  document.getElementById('profile-username').textContent = currentProfile.username ?? currentUser.email;
+  document.getElementById('profile-joined').textContent = currentProfile.created_at
+    ? 'Joined ' + new Date(currentProfile.created_at).toLocaleDateString()
+    : '';
+
+  const avatarEl = document.getElementById('avatar-wrap');
+  if (currentProfile.avatar_url) {
+    avatarEl.innerHTML = `<img src="${currentProfile.avatar_url}" alt="">`;
+  } else {
+    avatarEl.textContent = (currentProfile.username || currentUser.email || '?').charAt(0).toUpperCase();
+  }
+
+  document.getElementById('edit-username').value = currentProfile.username ?? '';
+  document.getElementById('edit-avatar').value = currentProfile.avatar_url ?? '';
+}
+
+window.saveProfile = async () => {
+  const username = document.getElementById('edit-username').value.trim();
+  const avatar   = document.getElementById('edit-avatar').value.trim();
+  if (!username) { toast('Username cannot be empty', 'error'); return; }
+
+  if (username !== currentProfile.username) {
+    const { data: existing } = await db.from('profiles').select('id')
+      .eq('username', username).neq('id', currentUser.id).single();
+    if (existing) { toast('That username is already taken', 'error'); return; }
+  }
+
+  const { error } = await db.from('profiles')
+    .update({ username, avatar_url: avatar || null }).eq('id', currentUser.id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+
+  currentProfile.username   = username;
+  currentProfile.avatar_url = avatar || null;
+  localStorage.setItem('mnw_profile', JSON.stringify(currentProfile));
+
+  toast('Profile updated', 'success');
+  renderHeader();
+};
+
+// ── Reading stats ──
+async function loadStats() {
+  const [{ data: rpData }, { count: commentCount }, { data: goal }] = await Promise.all([
+    db.from('reading_progress').select('completed, chapters(word_count, book_id)').eq('user_id', currentUser.id),
+    db.from('comments').select('id', { count: 'exact', head: true }).eq('user_id', currentUser.id),
+    db.from('reading_goals').select('current_streak').eq('user_id', currentUser.id).single(),
+  ]);
+
+  const rows = rpData || [];
+  const booksStarted      = new Set(rows.map(r => r.chapters?.book_id).filter(Boolean)).size;
+  const completedRows     = rows.filter(r => r.completed);
+  const chaptersCompleted = completedRows.length;
+  const totalWords        = completedRows.reduce((s, r) => s + (r.chapters?.word_count || 0), 0);
+  const streak             = goal?.current_streak ?? 0;
+
+  renderStats({ booksStarted, chaptersCompleted, totalWords, commentCount: commentCount ?? 0, streak });
+}
+
+function renderStats(s) {
+  const wordsDisplay = s.totalWords >= 1000 ? (s.totalWords / 1000).toFixed(1) + 'k' : s.totalWords;
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="profile-stat-card"><div class="profstat-num">${s.booksStarted}</div><div class="profstat-label">Novels Started</div></div>
+    <div class="profile-stat-card"><div class="profstat-num">${s.chaptersCompleted}</div><div class="profstat-label">Chapters Completed</div></div>
+    <div class="profile-stat-card"><div class="profstat-num">${wordsDisplay}</div><div class="profstat-label">Words Read</div></div>
+    <div class="profile-stat-card"><div class="profstat-num">🔥 ${s.streak}</div><div class="profstat-label">Week Streak</div></div>
+    <div class="profile-stat-card"><div class="profstat-num">${s.commentCount}</div><div class="profstat-label">Comments Posted</div></div>
+  `;
+}
+
+// ── Comment history ──
+async function loadCommentHistory() {
+  const { data } = await db.from('comments')
+    .select('id, content, created_at, approved, chapters(id, title, books(id, title))')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  const el = document.getElementById('comments-history');
+  if (!data?.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">💬</div><p>You haven't left any comments yet.</p></div>`;
+    return;
+  }
+
+  el.innerHTML = data.map(c => {
+    const ch = c.chapters, book = ch?.books;
+    return `
+    <div class="hist-comment-item">
+      <div class="hist-comment-head">
+        <a href="/chapter.html?id=${ch?.id}" class="hist-comment-chapter">${ch?.title ?? 'Chapter'}</a>
+        <span class="hist-comment-book">${book?.title ?? ''}</span>
+        <span class="badge ${c.approved ? 'badge-green' : 'badge-gold'}">${c.approved ? 'Published' : 'Pending'}</span>
+      </div>
+      <div class="hist-comment-text">${c.content}</div>
+      <div class="hist-comment-date">${new Date(c.created_at).toLocaleDateString()}</div>
+    </div>`;
+  }).join('');
+}
+
+renderHeader();
+loadStats();
+loadCommentHistory();
+</script>
+</body>
+</html>
