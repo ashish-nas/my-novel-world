@@ -100,7 +100,7 @@
 
 <script type="module">
 import db from '../js/supabase.js';
-import { requireAdmin, toast } from '../js/app.js';
+import { requireAdmin, toast, escapeHtml } from '../js/app.js';
 
 if (!await requireAdmin()) throw new Error('Not admin');
 
@@ -154,9 +154,9 @@ async function loadPending() {
   }
   body.innerHTML = data.map(c => `
     <tr>
-      <td>${c.profiles?.username ?? 'Reader'}</td>
-      <td class="text-sm">${c.chapters?.title ?? '—'}</td>
-      <td class="text-sm text-muted" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.content}</td>
+      <td>${escapeHtml(c.profiles?.username ?? 'Reader')}</td>
+      <td class="text-sm">${escapeHtml(c.chapters?.title ?? '—')}</td>
+      <td class="text-sm text-muted" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(c.content)}</td>
       <td class="td-actions">
         <button class="btn btn-sm badge-green" onclick="approveComment('${c.id}')">Approve</button>
         <button class="btn btn-sm btn-danger" onclick="deleteComment('${c.id}')">Delete</button>
