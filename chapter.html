@@ -236,7 +236,7 @@
 
 <script type="module">
 import db from '/js/supabase.js';
-import { initAuth, toast, readTime, wordCount } from '/js/app.js';
+import { initAuth, toast, readTime, wordCount, escapeHtml } from '/js/app.js';
 
 const params    = new URLSearchParams(location.search);
 const chapterId = params.get('id');
@@ -449,10 +449,10 @@ async function loadComments() {
   list.innerHTML = data.map(c => `
     <div class="comment-item">
       <div class="comment-header">
-        <span class="comment-author">${c.profiles?.username ?? 'Reader'}</span>
+        <span class="comment-author">${escapeHtml(c.profiles?.username ?? 'Reader')}</span>
         <span class="comment-date">${new Date(c.created_at).toLocaleDateString()}</span>
       </div>
-      <div class="comment-text">${c.content}</div>
+      <div class="comment-text">${escapeHtml(c.content)}</div>
     </div>`).join('');
 }
 window.postComment = async () => {

@@ -133,7 +133,7 @@
 
 <script type="module">
 import db from '/js/supabase.js';
-import { requireAuth, toast } from '/js/app.js';
+import { requireAuth, toast, escapeHtml } from '/js/app.js';
 
 if (!await requireAuth()) throw new Error('Not authenticated');
 const { currentUser, currentProfile } = await import('/js/app.js');
@@ -231,7 +231,7 @@ async function loadCommentHistory() {
         <span class="hist-comment-book">${book?.title ?? ''}</span>
         <span class="badge ${c.approved ? 'badge-green' : 'badge-gold'}">${c.approved ? 'Published' : 'Pending'}</span>
       </div>
-      <div class="hist-comment-text">${c.content}</div>
+      <div class="hist-comment-text">${escapeHtml(c.content)}</div>
       <div class="hist-comment-date">${new Date(c.created_at).toLocaleDateString()}</div>
     </div>`;
   }).join('');

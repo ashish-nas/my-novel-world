@@ -190,3 +190,14 @@ export function wordCount(html) {
 export function readTime(wc) {
   return Math.max(1, Math.round(wc / 200));
 }
+
+// Escape untrusted, reader-supplied text (comment content, usernames) before
+// inserting it via innerHTML, so a comment containing HTML/script can't execute.
+export function escapeHtml(str) {
+  return (str ?? '').toString()
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
