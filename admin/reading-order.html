@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading Order — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Content</div>
+      <a href="/admin/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+      <a href="/admin/books.html" class="sidebar-link"><i class="ti ti-books"></i>Novels</a>
+      <a href="/admin/reading-order.html" class="sidebar-link active"><i class="ti ti-list-numbers"></i>Reading Order</a>
+      <a href="/admin/posts.html" class="sidebar-link"><i class="ti ti-speakerphone"></i>Updates</a>
+      <a href="/admin/countdown.html" class="sidebar-link"><i class="ti ti-hourglass"></i>Countdown</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/admin/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments</a>
+      <a href="/admin/qa.html" class="sidebar-link"><i class="ti ti-question-mark"></i>Q&A</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/admin/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/admin/writing.html" class="sidebar-link"><i class="ti ti-pencil"></i>Writing Tracker</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+    </div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header">
+      <div>
+        <h1>Reading Order</h1>
+        <p>Tell new visitors which novel to start with.</p>
+      </div>
+      <button class="btn btn-primary" onclick="openModal()"><i class="ti ti-plus"></i> New Entry</button>
+    </div>
+
+    <div class="card" style="overflow:hidden">
+      <table class="admin-table">
+        <thead><tr><th>Group</th><th>Novel</th><th>Note</th><th>Order</th><th></th></tr></thead>
+        <tbody id="ro-body">
+          <tr><td colspan="5"><div class="empty"><div class="empty-icon">📚</div><p>Loading...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- NEW / EDIT MODAL -->
+<div class="overlay" id="ro-modal">
+  <div class="dialog" style="max-width:480px;text-align:left">
+    <h3 id="modal-title">New Entry</h3>
+    <div style="margin-top:1.25rem">
+      <div class="form-group">
+        <label class="form-label">Novel</label>
+        <select id="ro-book" class="form-input"></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Group</label>
+          <select id="ro-group" class="form-input">
+            <option value="Start Here">Start Here</option>
+            <option value="Next">Next</option>
+            <option value="Standalone">Standalone</option>
+            <option value="Advanced">Advanced</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Order in Group</label>
+          <input id="ro-order" type="number" class="form-input" value="0" min="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Recommendation Note</label>
+        <input id="ro-note" class="form-input" placeholder="e.g. Best starting point">
+      </div>
+    </div>
+    <div class="dialog-btns mt-3">
+      <button class="btn btn-primary" onclick="saveEntry()">Save</button>
+      <button class="btn" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { requireAdmin, toast, confirm, escapeHtml } from '../js/app.js';
+
+if (!await requireAdmin()) throw new Error('Not admin');
+
+let editId = null;
+
+async function loadBookOptions() {
+  const { data } = await db.from('books').select('id, title').order('title');
+  document.getElementById('ro-book').innerHTML =
+    (data || []).map(b => `<option value="${b.id}">${escapeHtml(b.title)}</option>`).join('');
+}
+
+async function loadEntries() {
+  const { data, error } = await db.from('reading_order')
+    .select('*, books(id, title)')
+    .order('group_name', { ascending: true })
+    .order('sort_order', { ascending: true });
+
+  const body = document.getElementById('ro-body');
+  if (error) {
+    body.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load reading order: ${escapeHtml(error.message)}</p></div></td></tr>`;
+    return;
+  }
+  if (!data?.length) {
+    body.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">📚</div><p>No entries yet. Click <strong>New Entry</strong> to add your first novel.</p></div></td></tr>`;
+    return;
+  }
+
+  body.innerHTML = data.map(r => `
+    <tr>
+      <td><span class="badge badge-gold">${escapeHtml(r.group_name ?? '')}</span></td>
+      <td class="td-title">${r.books ? escapeHtml(r.books.title) : '<span class="text-muted">Deleted novel</span>'}</td>
+      <td class="text-sm text-muted">${r.recommendation_note ? escapeHtml(r.recommendation_note) : '—'}</td>
+      <td class="text-sm text-muted">${r.sort_order ?? 0}</td>
+      <td class="td-actions">
+        <button class="btn btn-sm" onclick='editEntry(${JSON.stringify(r).replace(/'/g, "&#39;")})'><i class="ti ti-pencil"></i></button>
+        <button class="btn btn-sm btn-danger" onclick="deleteEntry('${r.id}')"><i class="ti ti-trash"></i></button>
+      </td>
+    </tr>`).join('');
+}
+
+window.openModal = () => {
+  editId = null;
+  document.getElementById('modal-title').textContent = 'New Entry';
+  document.getElementById('ro-group').value = 'Start Here';
+  document.getElementById('ro-order').value = 0;
+  document.getElementById('ro-note').value = '';
+  document.getElementById('ro-modal').classList.add('show');
+};
+
+window.editEntry = (r) => {
+  editId = r.id;
+  document.getElementById('modal-title').textContent = 'Edit Entry';
+  document.getElementById('ro-book').value = r.book_id;
+  document.getElementById('ro-group').value = r.group_name ?? 'Start Here';
+  document.getElementById('ro-order').value = r.sort_order ?? 0;
+  document.getElementById('ro-note').value = r.recommendation_note ?? '';
+  document.getElementById('ro-modal').classList.add('show');
+};
+
+window.closeModal = () => document.getElementById('ro-modal').classList.remove('show');
+
+window.saveEntry = async () => {
+  const bookId = document.getElementById('ro-book').value;
+  if (!bookId) { toast('Please choose a novel', 'error'); return; }
+
+  const payload = {
+    book_id: bookId,
+    group_name: document.getElementById('ro-group').value,
+    sort_order: parseInt(document.getElementById('ro-order').value) || 0,
+    recommendation_note: document.getElementById('ro-note').value.trim() || null,
+  };
+
+  const { error } = editId
+    ? await db.from('reading_order').update(payload).eq('id', editId)
+    : await db.from('reading_order').insert(payload);
+
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast(editId ? 'Entry updated!' : 'Entry added!', 'success');
+  closeModal();
+  loadEntries();
+};
+
+window.deleteEntry = async (id) => {
+  const ok = await confirm('Remove entry?', 'This novel will be removed from the reading order page.');
+  if (!ok) return;
+  await db.from('reading_order').delete().eq('id', id);
+  toast('Entry removed');
+  loadEntries();
+};
+
+await loadBookOptions();
+loadEntries();
+</script>
+</body>
+</html>

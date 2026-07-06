@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading Order — My Novel World</title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  .ro-header { text-align: center; margin-bottom: 3rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+  .ro-header p.sub { font-size: 0.9rem; color: var(--text2); margin-top: 1rem; line-height: 1.7; }
+
+  .ro-group { max-width: 760px; margin: 0 auto 3rem; }
+  .ro-group-title {
+    font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.3em; color: var(--gold);
+    text-transform: uppercase; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);
+  }
+  .ro-cards { display: flex; flex-direction: column; gap: 1rem; }
+  .ro-card {
+    display: flex; gap: 1.5rem; padding: 1.25rem; background: var(--bg2);
+    border: 1px solid var(--border); border-radius: var(--radius-lg); transition: border-color 0.2s;
+  }
+  .ro-card:hover { border-color: var(--border2); }
+  .ro-cover {
+    width: 70px; height: 100px; border-radius: var(--radius); overflow: hidden; background: var(--bg3);
+    display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--text3);
+    flex-shrink: 0; border: 1px solid var(--border);
+  }
+  .ro-cover img { width: 100%; height: 100%; object-fit: cover; }
+  .ro-info { flex: 1; min-width: 0; }
+  .ro-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; margin-bottom: 0.4rem; }
+  .ro-note { font-size: 0.85rem; color: var(--text2); margin: 0.6rem 0; line-height: 1.6; font-style: italic; }
+  .ro-actions { display: flex; gap: 0.6rem; margin-top: 0.75rem; flex-wrap: wrap; }
+
+  @media (max-width: 600px) {
+    .ro-card { flex-direction: column; }
+    .ro-cover { width: 100%; height: 140px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav" id="main-nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <ul class="nav-links">
+    <li><a href="/">Library</a></li>
+    <li><a href="/updates.html">Updates</a></li>
+    <li><a href="/reading-order.html" class="active">Reading Order</a></li>
+    <li><a href="/qa.html">Q&A</a></li>
+  </ul>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="page">
+  <div class="container">
+
+    <div class="ro-header fade-up">
+      <p class="eyebrow">Where to Start</p>
+      <h1 class="section-title">Recommended Reading Order</h1>
+      <p class="sub">New here? This is the order I'd suggest reading everything in — grouped by where each novel fits.</p>
+    </div>
+
+    <div id="ro-content">
+      <div class="empty"><div class="empty-icon">📚</div><p>Loading...</p></div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import db from '/js/supabase.js';
+import { initAuth, escapeHtml } from '/js/app.js';
+
+await initAuth();
+
+// Same "flatten published volumes/chapters in order, take the first" logic used on chapter.html
+function firstPublishedChapter(book) {
+  const flat = (book.volumes || [])
+    .filter(v => v.published)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .flatMap(v => (v.chapters || []).filter(c => c.published).sort((a, b) => a.sort_order - b.sort_order));
+  return flat[0] ?? null;
+}
+
+async function loadReadingOrder() {
+  const { data, error } = await db.from('reading_order')
+    .select(`*, books(id, title, genre, cover_url, color, symbol, published,
+      volumes(id, sort_order, published, chapters(id, sort_order, published)))`)
+    .order('group_name', { ascending: true })
+    .order('sort_order', { ascending: true });
+
+  const container = document.getElementById('ro-content');
+  if (error) {
+    console.error('loadReadingOrder failed:', error.message);
+    container.innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load the reading order right now.</p></div>`;
+    return;
+  }
+
+  const entries = (data || []).filter(r => r.books?.published);
+  if (!entries.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">📚</div><p>The reading order hasn't been set up yet — check back soon.</p></div>`;
+    return;
+  }
+
+  // Group while preserving first-seen order (matches the sort from the query above)
+  const groupOrder = [];
+  const groups = new Map();
+  entries.forEach(e => {
+    const g = e.group_name || 'More';
+    if (!groups.has(g)) { groups.set(g, []); groupOrder.push(g); }
+    groups.get(g).push(e);
+  });
+
+  container.innerHTML = groupOrder.map(g => `
+    <div class="ro-group">
+      <h2 class="ro-group-title">${escapeHtml(g)}</h2>
+      <div class="ro-cards">
+        ${groups.get(g).map(e => {
+          const b = e.books;
+          const first = firstPublishedChapter(b);
+          return `
+          <div class="ro-card">
+            <div class="ro-cover" style="background:${b.color || '#111114'}">
+              ${b.cover_url ? `<img src="${b.cover_url}">` : (b.symbol || '✦')}
+            </div>
+            <div class="ro-info">
+              <div class="ro-title">${escapeHtml(b.title)}</div>
+              <span class="badge">${escapeHtml(b.genre || '')}</span>
+              ${e.recommendation_note ? `<p class="ro-note">${escapeHtml(e.recommendation_note)}</p>` : ''}
+              <div class="ro-actions">
+                ${first ? `<a class="btn btn-primary btn-sm" href="/chapter.html?id=${first.id}"><i class="ti ti-book"></i> Start Reading</a>` : ''}
+                <a class="btn btn-sm" href="/book.html?id=${b.id}">View Novel</a>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+}
+
+loadReadingOrder();
+</script>
+</body>
+</html>
