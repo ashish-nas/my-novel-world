@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Updates — My Novel World</title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  .updates-header { text-align: center; margin-bottom: 3rem; }
+
+  .update-card { max-width: 680px; margin: 0 auto 2.75rem; padding-bottom: 2.75rem; border-bottom: 1px solid var(--border); }
+  .update-card:last-child { border-bottom: none; }
+  .update-meta { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+  .update-date { font-size: 0.72rem; color: var(--text3); }
+  .update-image { width: 100%; border-radius: var(--radius-lg); margin-bottom: 1.25rem; border: 1px solid var(--border); }
+  .update-title { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 300; margin-bottom: 1rem; }
+  .update-body { font-size: 0.95rem; color: var(--text2); line-height: 1.8; position: relative; }
+  .update-body p { margin-bottom: 1em; }
+  .update-body.collapsed { max-height: 130px; overflow: hidden; }
+  .update-body.collapsed::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 56px;
+    background: linear-gradient(transparent, var(--bg));
+  }
+  .update-toggle {
+    display: inline-block; margin-top: 0.6rem; font-family: 'Cinzel', serif; font-size: 0.6rem;
+    letter-spacing: 0.15em; color: var(--gold); background: none; border: none; cursor: pointer;
+    padding: 0; text-transform: uppercase;
+  }
+  .update-toggle:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<nav class="nav" id="main-nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <ul class="nav-links">
+    <li><a href="/">Library</a></li>
+    <li><a href="/updates.html" class="active">Updates</a></li>
+    <li><a href="/reading-order.html">Reading Order</a></li>
+    <li><a href="/qa.html">Q&A</a></li>
+  </ul>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="page">
+  <div class="container">
+
+    <div class="updates-header fade-up">
+      <p class="eyebrow">From the Author</p>
+      <h1 class="section-title">Updates</h1>
+    </div>
+
+    <div id="updates-feed">
+      <div class="empty"><div class="empty-icon">📣</div><p>Loading updates...</p></div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import db from '/js/supabase.js';
+import { initAuth, escapeHtml } from '/js/app.js';
+
+await initAuth();
+
+const TAG_LABELS = { announcement: 'Announcement', 'behind-scenes': 'Behind the Scenes', progress: 'Writing Progress', personal: 'Personal Note' };
+
+function stripHtml(html) {
+  return (html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+async function loadUpdates() {
+  const { data, error } = await db.from('author_posts')
+    .select('*').eq('published', true).order('created_at', { ascending: false });
+
+  const feed = document.getElementById('updates-feed');
+  if (error) {
+    console.error('loadUpdates failed:', error.message);
+    feed.innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load updates right now.</p></div>`;
+    return;
+  }
+  if (!data?.length) {
+    feed.innerHTML = `<div class="empty"><div class="empty-icon">📣</div><p>No updates yet — check back soon.</p></div>`;
+    return;
+  }
+
+  feed.innerHTML = data.map(p => {
+    const plain = stripHtml(p.content);
+    const needsToggle = plain.length > 400;
+    return `
+    <article class="update-card">
+      <div class="update-meta">
+        <span class="badge badge-gold">${TAG_LABELS[p.tag] ?? escapeHtml(p.tag ?? '')}</span>
+        <span class="update-date">${new Date(p.created_at).toLocaleDateString()}</span>
+      </div>
+      ${p.image_url ? `<img class="update-image" src="${p.image_url}" alt="">` : ''}
+      <h2 class="update-title">${escapeHtml(p.title)}</h2>
+      <div class="update-body ${needsToggle ? 'collapsed' : ''}" id="body-${p.id}">${p.content ?? ''}</div>
+      ${needsToggle ? `<button class="update-toggle" id="toggle-${p.id}" onclick="toggleExpand('${p.id}')">Read more</button>` : ''}
+    </article>`;
+  }).join('');
+}
+
+window.toggleExpand = (id) => {
+  const body = document.getElementById(`body-${id}`);
+  const btn  = document.getElementById(`toggle-${id}`);
+  const nowCollapsed = body.classList.toggle('collapsed');
+  btn.textContent = nowCollapsed ? 'Read more' : 'Show less';
+};
+
+loadUpdates();
+</script>
+</body>
+</html>

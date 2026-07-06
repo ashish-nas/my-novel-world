@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Updates — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css">
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Content</div>
+      <a href="/admin/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+      <a href="/admin/books.html" class="sidebar-link"><i class="ti ti-books"></i>Novels</a>
+      <a href="/admin/posts.html" class="sidebar-link active"><i class="ti ti-speakerphone"></i>Updates</a>
+      <a href="/admin/countdown.html" class="sidebar-link"><i class="ti ti-hourglass"></i>Countdown</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/admin/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments</a>
+      <a href="/admin/qa.html" class="sidebar-link"><i class="ti ti-question-mark"></i>Q&A</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/admin/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/admin/writing.html" class="sidebar-link"><i class="ti ti-pencil"></i>Writing Tracker</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+    </div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header">
+      <div>
+        <h1>Updates</h1>
+        <p>Write posts for readers between chapter releases.</p>
+      </div>
+      <button class="btn btn-primary" onclick="openModal()"><i class="ti ti-plus"></i> New Update</button>
+    </div>
+
+    <div class="card" style="overflow:hidden">
+      <table class="admin-table">
+        <thead><tr><th>Title</th><th>Tag</th><th>Date</th><th>Status</th><th></th></tr></thead>
+        <tbody id="posts-body">
+          <tr><td colspan="5"><div class="empty"><div class="empty-icon">📣</div><p>Loading updates...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- NEW / EDIT MODAL -->
+<div class="overlay" id="post-modal">
+  <div class="dialog" style="max-width:640px;text-align:left">
+    <h3 id="modal-title">New Update</h3>
+    <div style="margin-top:1.25rem">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input id="p-title" class="form-input" placeholder="e.g. Chapter 4 is coming this week!">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tag</label>
+          <select id="p-tag" class="form-input">
+            <option value="announcement">Announcement</option>
+            <option value="behind-scenes">Behind the Scenes</option>
+            <option value="progress">Writing Progress</option>
+            <option value="personal">Personal Note</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Image URL (optional)</label>
+        <input id="p-image" class="form-input" placeholder="https://res.cloudinary.com/...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Post Content</label>
+        <div id="quill-post"></div>
+      </div>
+      <div class="toggle-wrap mt-2">
+        <label class="toggle"><input type="checkbox" id="p-published"><span class="toggle-slider"></span></label>
+        <span class="toggle-label">Published — visible to readers</span>
+      </div>
+    </div>
+    <div class="dialog-btns mt-3">
+      <button class="btn btn-primary" onclick="savePost()">Save Update</button>
+      <button class="btn" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
+<script type="module">
+import db from '../js/supabase.js';
+import { requireAdmin, toast, confirm, escapeHtml } from '../js/app.js';
+
+if (!await requireAdmin()) throw new Error('Not admin');
+
+let editId = null;
+const TAG_LABELS = { announcement: 'Announcement', 'behind-scenes': 'Behind the Scenes', progress: 'Writing Progress', personal: 'Personal Note' };
+
+const quill = new Quill('#quill-post', {
+  theme: 'snow',
+  placeholder: 'Write your update here...',
+  modules: { toolbar: [['bold', 'italic', 'underline'], ['blockquote'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] }
+});
+
+async function loadPosts() {
+  const { data, error } = await db.from('author_posts').select('*').order('created_at', { ascending: false });
+  const body = document.getElementById('posts-body');
+
+  if (error) {
+    body.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load updates: ${escapeHtml(error.message)}</p></div></td></tr>`;
+    return;
+  }
+  if (!data?.length) {
+    body.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">📣</div><p>No updates yet. Click <strong>New Update</strong> to write one.</p></div></td></tr>`;
+    return;
+  }
+
+  body.innerHTML = data.map(p => `
+    <tr>
+      <td class="td-title">${escapeHtml(p.title)}</td>
+      <td><span class="badge badge-gold">${TAG_LABELS[p.tag] ?? escapeHtml(p.tag ?? '')}</span></td>
+      <td class="text-sm text-muted">${new Date(p.created_at).toLocaleDateString()}</td>
+      <td><span class="badge ${p.published ? 'badge-green' : 'badge-red'}">${p.published ? 'Live' : 'Draft'}</span></td>
+      <td class="td-actions">
+        <button class="btn btn-sm" onclick='editPost(${JSON.stringify(p).replace(/'/g, "&#39;")})'><i class="ti ti-pencil"></i></button>
+        <button class="btn btn-sm btn-danger" onclick="deletePost('${p.id}')"><i class="ti ti-trash"></i></button>
+      </td>
+    </tr>`).join('');
+}
+
+window.openModal = () => {
+  editId = null;
+  document.getElementById('modal-title').textContent = 'New Update';
+  document.getElementById('p-title').value = '';
+  document.getElementById('p-tag').value = 'announcement';
+  document.getElementById('p-image').value = '';
+  document.getElementById('p-published').checked = false;
+  quill.root.innerHTML = '';
+  document.getElementById('post-modal').classList.add('show');
+};
+
+window.editPost = (p) => {
+  editId = p.id;
+  document.getElementById('modal-title').textContent = 'Edit Update';
+  document.getElementById('p-title').value = p.title;
+  document.getElementById('p-tag').value = p.tag ?? 'announcement';
+  document.getElementById('p-image').value = p.image_url ?? '';
+  document.getElementById('p-published').checked = p.published;
+  quill.root.innerHTML = p.content ?? '';
+  document.getElementById('post-modal').classList.add('show');
+};
+
+window.closeModal = () => document.getElementById('post-modal').classList.remove('show');
+
+window.savePost = async () => {
+  const title = document.getElementById('p-title').value.trim();
+  if (!title) { toast('Please enter a title', 'error'); return; }
+
+  const payload = {
+    title,
+    content: quill.root.innerHTML,
+    tag: document.getElementById('p-tag').value,
+    image_url: document.getElementById('p-image').value.trim() || null,
+    published: document.getElementById('p-published').checked,
+  };
+
+  const { error } = editId
+    ? await db.from('author_posts').update(payload).eq('id', editId)
+    : await db.from('author_posts').insert(payload);
+
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast(editId ? 'Update saved!' : (payload.published ? 'Update published!' : 'Draft saved'), 'success');
+  closeModal();
+  loadPosts();
+};
+
+window.deletePost = async (id) => {
+  const ok = await confirm('Delete update?', 'This will permanently remove this update.');
+  if (!ok) return;
+  await db.from('author_posts').delete().eq('id', id);
+  toast('Update deleted');
+  loadPosts();
+};
+
+loadPosts();
+</script>
+</body>
+</html>
