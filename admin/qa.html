@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q&amp;A — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  .filter-tabs { display: flex; gap: 0.6rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .filter-count { display: inline-block; margin-left: 0.4rem; font-size: 0.7rem; opacity: 0.75; }
+  .qa-cell { max-width: 380px; white-space: normal; line-height: 1.6; }
+  .qa-question-box {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; color: var(--text);
+    padding: 0.85rem 1rem; background: var(--bg3); border-radius: var(--radius); line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Content</div>
+      <a href="/admin/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+      <a href="/admin/books.html" class="sidebar-link"><i class="ti ti-books"></i>Novels</a>
+      <a href="/admin/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>Reading Order</a>
+      <a href="/admin/posts.html" class="sidebar-link"><i class="ti ti-speakerphone"></i>Updates</a>
+      <a href="/admin/countdown.html" class="sidebar-link"><i class="ti ti-hourglass"></i>Countdown</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/admin/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments</a>
+      <a href="/admin/qa.html" class="sidebar-link active"><i class="ti ti-question-mark"></i>Q&A</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/admin/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/admin/writing.html" class="sidebar-link"><i class="ti ti-pencil"></i>Writing Tracker</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+    </div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header">
+      <div>
+        <h1>Q&amp;A</h1>
+        <p>Answer reader questions — highest upvoted appear first while unanswered.</p>
+      </div>
+    </div>
+
+    <div class="filter-tabs" id="filter-tabs">
+      <button class="btn btn-primary" data-filter="unanswered" onclick="setFilter('unanswered')">
+        Unanswered<span class="filter-count" id="count-unanswered"></span>
+      </button>
+      <button class="btn" data-filter="answered" onclick="setFilter('answered')">
+        Answered<span class="filter-count" id="count-answered"></span>
+      </button>
+      <button class="btn" data-filter="all" onclick="setFilter('all')">All</button>
+    </div>
+
+    <div class="card" style="overflow:hidden">
+      <table class="admin-table">
+        <thead><tr><th>Question</th><th>Topic</th><th>Upvotes</th><th>Status</th><th></th></tr></thead>
+        <tbody id="qa-body">
+          <tr><td colspan="5"><div class="empty"><div class="empty-icon">❓</div><p>Loading...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- ANSWER MODAL -->
+<div class="overlay" id="qa-modal">
+  <div class="dialog" style="max-width:600px;text-align:left">
+    <h3 id="modal-title">Answer Question</h3>
+    <div style="margin-top:1.25rem">
+      <div class="form-group">
+        <label class="form-label">Question</label>
+        <p class="qa-question-box" id="qa-question-display"></p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your Answer</label>
+        <textarea id="qa-answer" class="form-input" rows="5" placeholder="Write your answer..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Topic</label>
+        <select id="qa-topic" class="form-input">
+          <option value="writing">Writing Process</option>
+          <option value="books">About the Books</option>
+          <option value="personal">Personal</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="toggle-wrap mt-2">
+        <label class="toggle"><input type="checkbox" id="qa-published"><span class="toggle-slider"></span></label>
+        <span class="toggle-label">Published — visible to readers</span>
+      </div>
+    </div>
+    <div class="dialog-btns mt-3">
+      <button class="btn btn-primary" onclick="saveAnswer()">Save</button>
+      <button class="btn" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { requireAdmin, toast, confirm, escapeHtml } from '../js/app.js';
+
+if (!await requireAdmin()) throw new Error('Not admin');
+
+const TOPIC_LABELS = { writing: 'Writing Process', books: 'About the Books', personal: 'Personal', other: 'Other' };
+let currentId = null;
+let currentFilter = 'unanswered';
+
+window.setFilter = (f) => {
+  currentFilter = f;
+  document.querySelectorAll('#filter-tabs button').forEach(b => b.classList.toggle('btn-primary', b.dataset.filter === f));
+  loadQuestions();
+};
+
+async function loadCounts() {
+  const [{ count: unanswered }, { count: answered }] = await Promise.all([
+    db.from('qa_questions').select('id', { count: 'exact', head: true }).is('answer', null),
+    db.from('qa_questions').select('id', { count: 'exact', head: true }).not('answer', 'is', null),
+  ]);
+  document.getElementById('count-unanswered').textContent = ` (${unanswered ?? 0})`;
+  document.getElementById('count-answered').textContent  = ` (${answered ?? 0})`;
+}
+
+async function loadQuestions() {
+  let query = db.from('qa_questions').select('*');
+  if (currentFilter === 'unanswered')     query = query.is('answer', null).order('upvotes', { ascending: false });
+  else if (currentFilter === 'answered')  query = query.not('answer', 'is', null).order('created_at', { ascending: false });
+  else                                    query = query.order('created_at', { ascending: false });
+
+  const { data, error } = await query;
+  const body = document.getElementById('qa-body');
+
+  if (error) {
+    body.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load questions: ${escapeHtml(error.message)}</p></div></td></tr>`;
+    return;
+  }
+  if (!data?.length) {
+    const msg = currentFilter === 'unanswered' ? 'No unanswered questions — you\'re all caught up.'
+              : currentFilter === 'answered'   ? 'No answered questions yet.'
+              : 'No questions yet.';
+    body.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">❓</div><p>${msg}</p></div></td></tr>`;
+    return;
+  }
+
+  body.innerHTML = data.map(q => {
+    const status = !q.answer ? 'Unanswered' : (q.published ? 'Live' : 'Draft');
+    const badgeClass = !q.answer ? '' : (q.published ? 'badge-green' : 'badge-gold');
+    return `
+    <tr>
+      <td class="qa-cell">${escapeHtml(q.question)}</td>
+      <td class="text-sm">${q.topic ? escapeHtml(TOPIC_LABELS[q.topic] ?? q.topic) : '<span class="text-muted">—</span>'}</td>
+      <td class="text-sm">${q.upvotes ?? 0}</td>
+      <td><span class="badge ${badgeClass}">${status}</span></td>
+      <td class="td-actions">
+        <button class="btn btn-sm" onclick='openAnswerModal(${JSON.stringify(q).replace(/'/g, "&#39;")})'>${q.answer ? 'Edit' : 'Answer'}</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteQuestion('${q.id}')"><i class="ti ti-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+window.openAnswerModal = (q) => {
+  currentId = q.id;
+  document.getElementById('modal-title').textContent = q.answer ? 'Edit Answer' : 'Answer Question';
+  document.getElementById('qa-question-display').textContent = q.question;
+  document.getElementById('qa-answer').value = q.answer ?? '';
+  document.getElementById('qa-topic').value = q.topic ?? 'writing';
+  document.getElementById('qa-published').checked = q.published ?? false;
+  document.getElementById('qa-modal').classList.add('show');
+};
+
+window.closeModal = () => document.getElementById('qa-modal').classList.remove('show');
+
+window.saveAnswer = async () => {
+  const answer = document.getElementById('qa-answer').value.trim();
+  if (!answer) { toast('Please write an answer', 'error'); return; }
+
+  const payload = {
+    answer,
+    topic: document.getElementById('qa-topic').value,
+    published: document.getElementById('qa-published').checked,
+  };
+
+  const { error } = await db.from('qa_questions').update(payload).eq('id', currentId);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast(payload.published ? 'Answer published!' : 'Saved as draft', 'success');
+  closeModal();
+  loadCounts();
+  loadQuestions();
+};
+
+window.deleteQuestion = async (id) => {
+  const ok = await confirm('Delete question?', 'This will permanently remove this question and its answer.');
+  if (!ok) return;
+  await db.from('qa_questions').delete().eq('id', id);
+  toast('Question deleted');
+  loadCounts();
+  loadQuestions();
+};
+
+loadCounts();
+loadQuestions();
+</script>
+</body>
+</html>
