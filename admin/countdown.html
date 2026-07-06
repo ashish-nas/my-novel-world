@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Countdown — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  .cd-preview {
+    padding: 1.75rem 2rem; margin-bottom: 2rem; text-align: center;
+  }
+  .cd-preview-label {
+    font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.3em;
+    color: var(--gold); margin-bottom: 0.75rem; text-transform: uppercase;
+  }
+  .cd-preview-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; margin-bottom: 1rem; }
+  .cd-preview-timer { display: flex; gap: 1.5rem; justify-content: center; align-items: flex-end; margin-bottom: 1.25rem; }
+  .cd-preview-unit { text-align: center; }
+  .cd-preview-num { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; color: var(--gold); line-height: 1; display: block; }
+  .cd-preview-lbl { font-family: 'Cinzel', serif; font-size: 0.5rem; letter-spacing: 0.2em; color: var(--text3); margin-top: 0.3rem; }
+  .cd-preview-sep { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; color: var(--text3); padding-bottom: 0.3rem; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Content</div>
+      <a href="/admin/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+      <a href="/admin/books.html" class="sidebar-link"><i class="ti ti-books"></i>Novels</a>
+      <a href="/admin/posts.html" class="sidebar-link"><i class="ti ti-speakerphone"></i>Updates</a>
+      <a href="/admin/countdown.html" class="sidebar-link active"><i class="ti ti-hourglass"></i>Countdown</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/admin/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments</a>
+      <a href="/admin/qa.html" class="sidebar-link"><i class="ti ti-question-mark"></i>Q&A</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/admin/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/admin/writing.html" class="sidebar-link"><i class="ti ti-pencil"></i>Writing Tracker</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+    </div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header">
+      <div>
+        <h1>Countdown</h1>
+        <p>Set the release countdown shown on the homepage. Only one can be active at a time.</p>
+      </div>
+      <button class="btn btn-primary" onclick="openModal()"><i class="ti ti-plus"></i> New Countdown</button>
+    </div>
+
+    <!-- Live preview of whichever countdown is currently active -->
+    <div class="card cd-preview" id="cd-preview" style="display:none">
+      <div class="cd-preview-label">Currently live on homepage</div>
+      <div class="cd-preview-title" id="cd-preview-title"></div>
+      <div class="cd-preview-timer">
+        <div class="cd-preview-unit"><span class="cd-preview-num" id="p-days">00</span><div class="cd-preview-lbl">Days</div></div>
+        <span class="cd-preview-sep">:</span>
+        <div class="cd-preview-unit"><span class="cd-preview-num" id="p-hours">00</span><div class="cd-preview-lbl">Hours</div></div>
+        <span class="cd-preview-sep">:</span>
+        <div class="cd-preview-unit"><span class="cd-preview-num" id="p-mins">00</span><div class="cd-preview-lbl">Mins</div></div>
+        <span class="cd-preview-sep">:</span>
+        <div class="cd-preview-unit"><span class="cd-preview-num" id="p-secs">00</span><div class="cd-preview-lbl">Secs</div></div>
+      </div>
+    </div>
+
+    <div class="card" style="overflow:hidden">
+      <table class="admin-table">
+        <thead><tr>
+          <th>Teaser</th><th>Target Date</th><th>Linked Novel</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody id="cd-body">
+          <tr><td colspan="5"><div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- NEW / EDIT MODAL -->
+<div class="overlay" id="cd-modal">
+  <div class="dialog" style="max-width:480px;text-align:left">
+    <h3 id="modal-title">New Countdown</h3>
+    <div style="margin-top:1.25rem">
+      <div class="form-group">
+        <label class="form-label">Teaser Text</label>
+        <input id="cd-title" class="form-input" placeholder="e.g. Chapter 12 drops soon...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Target Date &amp; Time</label>
+        <input id="cd-target" type="datetime-local" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Link to a Novel (optional)</label>
+        <select id="cd-book" class="form-input">
+          <option value="">— No specific novel —</option>
+        </select>
+        <div class="form-hint">If set, clicking the homepage banner takes readers to this novel</div>
+      </div>
+      <div class="toggle-wrap mt-2">
+        <label class="toggle"><input type="checkbox" id="cd-active"><span class="toggle-slider"></span></label>
+        <span class="toggle-label">Make this the active countdown</span>
+      </div>
+      <div class="form-hint mt-1">Activating this will deactivate any other countdown automatically.</div>
+    </div>
+    <div class="dialog-btns mt-3">
+      <button class="btn btn-primary" onclick="saveCountdown()">Save</button>
+      <button class="btn" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { requireAdmin, toast, confirm, escapeHtml } from '../js/app.js';
+
+if (!await requireAdmin()) throw new Error('Not admin');
+
+let editId = null;
+let tickTimer = null;
+
+// ── Populate the book dropdown once ──
+async function loadBookOptions() {
+  const { data } = await db.from('books').select('id, title').order('title');
+  const select = document.getElementById('cd-book');
+  (data || []).forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b.id;
+    opt.textContent = b.title;
+    select.appendChild(opt);
+  });
+}
+
+// ── List all countdowns ──
+async function loadCountdowns() {
+  const { data, error } = await db.from('countdowns')
+    .select('*, books(id, title)')
+    .order('target_date', { ascending: false });
+
+  const body = document.getElementById('cd-body');
+  if (error) {
+    body.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load countdowns: ${escapeHtml(error.message)}</p></div></td></tr>`;
+    return;
+  }
+  if (!data?.length) {
+    body.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">⏳</div><p>No countdowns yet. Click <strong>New Countdown</strong> to add one.</p></div></td></tr>`;
+    renderPreview(null);
+    return;
+  }
+
+  body.innerHTML = data.map(c => `
+    <tr>
+      <td class="td-title">${escapeHtml(c.title)}</td>
+      <td class="text-sm text-muted">${new Date(c.target_date).toLocaleString()}</td>
+      <td class="text-sm">${c.books?.title ? escapeHtml(c.books.title) : '<span class="text-muted">—</span>'}</td>
+      <td><span class="badge ${c.active ? 'badge-green' : ''}">${c.active ? 'Active' : 'Inactive'}</span></td>
+      <td class="td-actions">
+        ${c.active
+          ? `<button class="btn btn-sm" onclick="deactivate('${c.id}')">Deactivate</button>`
+          : `<button class="btn btn-sm btn-primary" onclick="activate('${c.id}')">Activate</button>`}
+        <button class="btn btn-sm" onclick='editCountdown(${JSON.stringify(c).replace(/'/g, "&#39;")})'><i class="ti ti-pencil"></i></button>
+        <button class="btn btn-sm btn-danger" onclick="deleteCountdown('${c.id}')"><i class="ti ti-trash"></i></button>
+      </td>
+    </tr>`).join('');
+
+  renderPreview(data.find(c => c.active) ?? null);
+}
+
+// ── Live preview of the active countdown (mirrors homepage logic) ──
+function renderPreview(active) {
+  clearInterval(tickTimer);
+  const box = document.getElementById('cd-preview');
+  if (!active) { box.style.display = 'none'; return; }
+
+  box.style.display = 'block';
+  document.getElementById('cd-preview-title').textContent = active.title ?? '';
+  const target = new Date(active.target_date).getTime();
+
+  function tick() {
+    const diff = target - Date.now();
+    const d = Math.max(0, Math.floor(diff / 86400000));
+    const h = Math.max(0, Math.floor((diff % 86400000) / 3600000));
+    const m = Math.max(0, Math.floor((diff % 3600000) / 60000));
+    const s = Math.max(0, Math.floor((diff % 60000) / 1000));
+    document.getElementById('p-days').textContent  = String(d).padStart(2, '0');
+    document.getElementById('p-hours').textContent = String(h).padStart(2, '0');
+    document.getElementById('p-mins').textContent  = String(m).padStart(2, '0');
+    document.getElementById('p-secs').textContent  = String(s).padStart(2, '0');
+  }
+  tick();
+  tickTimer = setInterval(tick, 1000);
+}
+
+// ── Modal open/close ──
+window.openModal = () => {
+  editId = null;
+  document.getElementById('modal-title').textContent = 'New Countdown';
+  document.getElementById('cd-title').value = '';
+  document.getElementById('cd-target').value = '';
+  document.getElementById('cd-book').value = '';
+  document.getElementById('cd-active').checked = false;
+  document.getElementById('cd-modal').classList.add('show');
+};
+
+window.editCountdown = (c) => {
+  editId = c.id;
+  document.getElementById('modal-title').textContent = 'Edit Countdown';
+  document.getElementById('cd-title').value = c.title ?? '';
+  document.getElementById('cd-target').value = c.target_date ? c.target_date.slice(0, 16) : '';
+  document.getElementById('cd-book').value = c.book_id ?? '';
+  document.getElementById('cd-active').checked = c.active;
+  document.getElementById('cd-modal').classList.add('show');
+};
+
+window.closeModal = () => document.getElementById('cd-modal').classList.remove('show');
+
+// ── Save (create or update) ──
+window.saveCountdown = async () => {
+  const title  = document.getElementById('cd-title').value.trim();
+  const target = document.getElementById('cd-target').value;
+  if (!title)  { toast('Please enter teaser text', 'error'); return; }
+  if (!target) { toast('Please choose a target date and time', 'error'); return; }
+
+  const payload = {
+    title,
+    target_date: new Date(target).toISOString(),
+    book_id: document.getElementById('cd-book').value || null,
+    active: document.getElementById('cd-active').checked,
+  };
+
+  // Enforce "only one active at a time" before writing this row
+  if (payload.active) {
+    await db.from('countdowns').update({ active: false }).neq('id', editId ?? '00000000-0000-0000-0000-000000000000');
+  }
+
+  const { error } = editId
+    ? await db.from('countdowns').update(payload).eq('id', editId)
+    : await db.from('countdowns').insert(payload);
+
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast(editId ? 'Countdown updated!' : 'Countdown created!', 'success');
+  closeModal();
+  loadCountdowns();
+};
+
+// ── Activate / deactivate ──
+window.activate = async (id) => {
+  await db.from('countdowns').update({ active: false }).neq('id', id);
+  const { error } = await db.from('countdowns').update({ active: true }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Countdown activated — now live on the homepage', 'success');
+  loadCountdowns();
+};
+
+window.deactivate = async (id) => {
+  const { error } = await db.from('countdowns').update({ active: false }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Countdown deactivated');
+  loadCountdowns();
+};
+
+window.deleteCountdown = async (id) => {
+  const ok = await confirm('Delete countdown?', 'This will permanently remove this countdown.');
+  if (!ok) return;
+  await db.from('countdowns').delete().eq('id', id);
+  toast('Countdown deleted');
+  loadCountdowns();
+};
+
+await loadBookOptions();
+loadCountdowns();
+</script>
+</body>
+</html>

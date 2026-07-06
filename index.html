@@ -103,7 +103,10 @@
     text-align: center;
     margin-bottom: 3rem;
     display: none;
+    transition: border-color 0.2s;
   }
+  .countdown-banner.clickable { cursor: pointer; }
+  .countdown-banner.clickable:hover { border-color: var(--gold); }
   .countdown-label {
     font-family: 'Cinzel', serif;
     font-size: 0.6rem; letter-spacing: 0.3em;
@@ -644,6 +647,10 @@ async function loadCountdown() {
   const banner = document.getElementById('countdown-banner');
   document.getElementById('countdown-title').textContent = data.title ?? '';
   banner.style.display = 'block';
+  if (data.book_id) {
+    banner.classList.add('clickable');
+    banner.onclick = () => location.href = '/book.html?id=' + data.book_id;
+  }
 
   const target = new Date(data.target_date).getTime();
 
