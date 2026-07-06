@@ -399,6 +399,7 @@
       placeholder="Search novels, chapters..."
       autocomplete="off"
       oninput="handleSearch(this.value)"
+      onkeydown="if(event.key==='Enter'&&this.value.trim())location.href='/search.html?q='+encodeURIComponent(this.value.trim())"
     >
     <div class="search-results" id="search-results"></div>
   </div>
@@ -478,11 +479,8 @@ async function loadBooks() {
     .order('created_at', { ascending: true });
 
   if (error || !books?.length) {
-    console.log('Books fetch error:', error);
-    console.log('Books data:', books);
     renderEmpty(); return;
   }
-  console.log('Books fetched:', books.length, books);
 
   // Then fetch volumes and chapters counts separately
   const bookIds = books.map(b => b.id);
@@ -610,8 +608,13 @@ window.handleSearch = async (query) => {
     })),
   ];
 
+  const seeAllRow = `
+    <div class="search-result-item" onclick="location.href='/search.html?q=${encodeURIComponent(query)}'" style="text-align:center">
+      <span class="sr-title" style="color:var(--gold);width:100%">See all results for "${query}" →</span>
+    </div>`;
+
   if (!items.length) {
-    results.innerHTML = `<div class="search-result-item"><span class="sr-title" style="color:var(--text3)">No results for "${query}"</span></div>`;
+    results.innerHTML = `<div class="search-result-item"><span class="sr-title" style="color:var(--text3)">No quick matches for "${query}"</span></div>` + seeAllRow;
   } else {
     results.innerHTML = items.map(it => `
       <div class="search-result-item" onclick="location.href='${it.href}'">
@@ -620,7 +623,7 @@ window.handleSearch = async (query) => {
           <div class="sr-title">${it.title}</div>
           <div class="sr-sub">${it.sub}</div>
         </div>
-      </div>`).join('');
+      </div>`).join('') + seeAllRow;
   }
   results.classList.add('show');
 };

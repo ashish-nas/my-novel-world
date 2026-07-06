@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search — My Novel World</title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  .search-header { text-align: center; margin-bottom: 1.5rem; }
+  .search-box { position: relative; max-width: 640px; margin: 1.25rem auto 0; }
+  .search-box i {
+    position: absolute; left: 1.15rem; top: 50%; transform: translateY(-50%);
+    color: var(--text3); font-size: 1.1rem; pointer-events: none;
+  }
+  .search-box input {
+    width: 100%; padding: 0.95rem 1.25rem 0.95rem 2.85rem; background: var(--bg2);
+    border: 1px solid var(--border2); border-radius: 999px; color: var(--text);
+    font-size: 1rem; outline: none; transition: border-color 0.2s;
+  }
+  .search-box input:focus { border-color: var(--gold); }
+  .search-box input::placeholder { color: var(--text3); }
+  .search-meta { text-align: center; font-size: 0.78rem; color: var(--text3); margin: 1.25rem 0 2.5rem; min-height: 1em; }
+
+  .lib-section { margin-bottom: 3rem; }
+  .lib-section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.25rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--border);
+  }
+  .lib-section-head h2 {
+    font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em;
+    color: var(--text3); text-transform: uppercase; font-weight: 400;
+  }
+
+  /* ── Novel result cards ── */
+  .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1.5rem; }
+  .book-cover {
+    aspect-ratio: 2/3; border-radius: var(--radius-lg); overflow: hidden; background: var(--bg3);
+    display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--text3);
+    border: 1px solid var(--border); margin-bottom: 0.6rem; transition: border-color 0.2s; cursor: pointer;
+  }
+  .book-cover:hover { border-color: var(--gold); }
+  .book-cover img { width: 100%; height: 100%; object-fit: cover; }
+  .book-title { font-family: 'Cormorant Garamond', serif; font-size: 1rem; margin-bottom: 0.2rem; cursor: pointer; line-height: 1.3; }
+  .book-title:hover { color: var(--gold); }
+  .book-genre { font-size: 0.68rem; color: var(--text3); }
+
+  /* ── Chapter result rows ── */
+  .search-chapter-row {
+    padding: 1.1rem 1.25rem; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); margin-bottom: 0.75rem; cursor: pointer; transition: all 0.2s;
+  }
+  .search-chapter-row:hover { border-color: var(--gold); }
+  .src-chapter-title { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; margin-bottom: 0.25rem; }
+  .src-chapter-path {
+    font-size: 0.65rem; color: var(--text3); font-family: 'Cinzel', serif;
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.55rem;
+  }
+  .src-chapter-snippet { font-size: 0.85rem; color: var(--text2); line-height: 1.65; }
+  .src-chapter-snippet mark { background: var(--gold-dim); color: var(--gold); padding: 0 0.15em; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<nav class="nav" id="main-nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <ul class="nav-links">
+    <li><a href="/">Library</a></li>
+    <li><a href="/updates.html">Updates</a></li>
+    <li><a href="/reading-order.html">Reading Order</a></li>
+    <li><a href="/qa.html">Q&A</a></li>
+  </ul>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="page">
+  <div class="container">
+
+    <div class="search-header fade-up">
+      <p class="eyebrow">Search</p>
+      <h1 class="section-title" style="font-size:clamp(1.8rem,4vw,2.6rem)">Find a novel or chapter</h1>
+      <div class="search-box">
+        <i class="ti ti-search"></i>
+        <input id="search-input" type="text" placeholder="Search titles, teasers, and chapter text..." autocomplete="off">
+      </div>
+    </div>
+
+    <div class="search-meta" id="search-meta">Loading search index…</div>
+
+    <div class="lib-section" id="results-novels-section" style="display:none">
+      <div class="lib-section-head"><h2>Novels</h2></div>
+      <div id="results-novels" class="book-grid"></div>
+    </div>
+
+    <div class="lib-section" id="results-chapters-section" style="display:none">
+      <div class="lib-section-head"><h2>Chapters</h2></div>
+      <div id="results-chapters"></div>
+    </div>
+
+    <div id="empty-state"></div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+<script type="module">
+import db from '/js/supabase.js';
+import { initAuth, escapeHtml } from '/js/app.js';
+
+await initAuth();
+
+if (typeof Fuse === 'undefined') {
+  document.getElementById('search-meta').textContent = '';
+  document.getElementById('empty-state').innerHTML =
+    `<div class="empty"><div class="empty-icon">⚠</div><p>Search couldn't load. Please refresh the page.</p></div>`;
+  throw new Error('Fuse.js failed to load from CDN');
+}
+
+function stripHtml(html) {
+  return (html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+// Highlight the first match location within a field, with surrounding context.
+function highlightSnippet(text, indices, radius = 80) {
+  text = text || '';
+  if (!indices?.length) {
+    const short = text.slice(0, 160);
+    return escapeHtml(short) + (text.length > 160 ? '…' : '');
+  }
+  const [start, end] = indices[0];
+  const from = Math.max(0, start - radius);
+  const to   = Math.min(text.length, end + 1 + radius);
+  const pre  = escapeHtml(text.slice(from, start));
+  const mid  = escapeHtml(text.slice(start, end + 1));
+  const post = escapeHtml(text.slice(end + 1, to));
+  return (from > 0 ? '…' : '') + pre + '<mark>' + mid + '</mark>' + post + (to < text.length ? '…' : '');
+}
+
+let bookFuse, chapterFuse;
+
+async function loadIndex() {
+  const { data, error } = await db.from('books')
+    .select('id, title, genre, description, cover_url, color, symbol, volumes(id, title, sort_order, published, chapters(id, title, teaser, content, sort_order, published))')
+    .eq('published', true);
+
+  if (error) console.error('search index load failed:', error.message);
+  const books = data || [];
+
+  const bookDocs = books.map(b => ({
+    id: b.id, title: b.title, genre: b.genre || '', description: b.description || '',
+    cover_url: b.cover_url, color: b.color, symbol: b.symbol,
+  }));
+
+  const chapterDocs = books.flatMap(b =>
+    (b.volumes || []).filter(v => v.published).flatMap(v =>
+      (v.chapters || []).filter(c => c.published).map(c => ({
+        id: c.id, title: c.title, teaser: c.teaser || '',
+        plainContent: stripHtml(c.content),
+        bookTitle: b.title, volumeTitle: v.title,
+      }))
+    )
+  );
+
+  bookFuse = new Fuse(bookDocs, {
+    keys: [
+      { name: 'title', weight: 0.5 },
+      { name: 'genre', weight: 0.2 },
+      { name: 'description', weight: 0.3 },
+    ],
+    threshold: 0.35, ignoreLocation: true, includeMatches: true,
+  });
+
+  chapterFuse = new Fuse(chapterDocs, {
+    keys: [
+      { name: 'title', weight: 0.4 },
+      { name: 'teaser', weight: 0.3 },
+      { name: 'plainContent', weight: 0.25 },
+      { name: 'bookTitle', weight: 0.15 },
+    ],
+    threshold: 0.35, ignoreLocation: true, includeMatches: true,
+  });
+}
+
+function showPrompt() {
+  document.getElementById('search-meta').textContent = '';
+  document.getElementById('results-novels-section').style.display = 'none';
+  document.getElementById('results-chapters-section').style.display = 'none';
+  document.getElementById('empty-state').innerHTML =
+    `<div class="empty"><div class="empty-icon">🔍</div><p>Start typing to search novels and chapters.</p></div>`;
+}
+
+function renderResults(query, bookHits, chapterHits) {
+  document.getElementById('empty-state').innerHTML = '';
+
+  const total = bookHits.length + chapterHits.length;
+  document.getElementById('search-meta').textContent =
+    `${total} result${total !== 1 ? 's' : ''} for "${query}"`;
+
+  const novelSection = document.getElementById('results-novels-section');
+  if (bookHits.length) {
+    novelSection.style.display = 'block';
+    document.getElementById('results-novels').innerHTML = bookHits.map(({ item }) => `
+      <div class="book-card">
+        <div class="book-cover" style="background:${item.color || '#111114'}" onclick="location.href='/book.html?id=${item.id}'">
+          ${item.cover_url ? `<img src="${item.cover_url}">` : (item.symbol || '✦')}
+        </div>
+        <div class="book-title" onclick="location.href='/book.html?id=${item.id}'">${escapeHtml(item.title)}</div>
+        <div class="book-genre">${escapeHtml(item.genre)}</div>
+      </div>`).join('');
+  } else {
+    novelSection.style.display = 'none';
+  }
+
+  const chapterSection = document.getElementById('results-chapters-section');
+  if (chapterHits.length) {
+    chapterSection.style.display = 'block';
+    document.getElementById('results-chapters').innerHTML = chapterHits.map(r => {
+      const c = r.item;
+      const contentMatch = r.matches?.find(m => m.key === 'plainContent');
+      const teaserMatch   = r.matches?.find(m => m.key === 'teaser');
+      const snippetHtml = contentMatch ? highlightSnippet(c.plainContent, contentMatch.indices)
+                        : teaserMatch  ? highlightSnippet(c.teaser, teaserMatch.indices)
+                        : escapeHtml((c.teaser || c.plainContent).slice(0, 160));
+      return `
+      <div class="search-chapter-row" onclick="location.href='/chapter.html?id=${c.id}'">
+        <div class="src-chapter-title">${escapeHtml(c.title)}</div>
+        <div class="src-chapter-path">${escapeHtml(c.bookTitle)} › ${escapeHtml(c.volumeTitle)}</div>
+        <div class="src-chapter-snippet">${snippetHtml}</div>
+      </div>`;
+    }).join('');
+  } else {
+    chapterSection.style.display = 'none';
+  }
+
+  if (!total) {
+    document.getElementById('empty-state').innerHTML =
+      `<div class="empty"><div class="empty-icon">🔍</div><p>No results for "${escapeHtml(query)}". Try a different search.</p></div>`;
+  }
+}
+
+function runSearch(query) {
+  query = query.trim();
+  history.replaceState(null, '', query ? '/search.html?q=' + encodeURIComponent(query) : '/search.html');
+  if (!query) { showPrompt(); return; }
+  const bookHits    = bookFuse.search(query).slice(0, 12);
+  const chapterHits = chapterFuse.search(query).slice(0, 24);
+  renderResults(query, bookHits, chapterHits);
+}
+
+let debounceTimer;
+document.getElementById('search-input').addEventListener('input', (e) => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => runSearch(e.target.value), 200);
+});
+
+await loadIndex();
+
+const initialQuery = new URLSearchParams(location.search).get('q') || '';
+document.getElementById('search-input').value = initialQuery;
+if (initialQuery) runSearch(initialQuery); else showPrompt();
+</script>
+</body>
+</html>
