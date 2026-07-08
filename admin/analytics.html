@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  .chart-card { padding: 1.5rem; margin-bottom: 1.5rem; }
+  .chart-card-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);
+  }
+  .chart-card-header h3 {
+    font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.2em;
+    color: var(--text3); text-transform: uppercase;
+  }
+  .funnel-select { max-width: 240px; }
+  .chart-wrap { position: relative; height: 280px; }
+  .chart-wrap.tall { height: 340px; }
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .stat-num-text { font-size: 1.3rem; line-height: 1.35; }
+  .stat-sub { font-size: 0.7rem; text-transform: none; letter-spacing: normal; color: var(--text3); display: block; margin-top: 0.15rem; }
+  .chart-empty { padding: 3rem 1rem; }
+  @media (max-width: 900px) {
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Content</div>
+      <a href="/admin/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+      <a href="/admin/books.html" class="sidebar-link"><i class="ti ti-books"></i>Novels</a>
+      <a href="/admin/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>Reading Order</a>
+      <a href="/admin/posts.html" class="sidebar-link"><i class="ti ti-speakerphone"></i>Updates</a>
+      <a href="/admin/countdown.html" class="sidebar-link"><i class="ti ti-hourglass"></i>Countdown</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/admin/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments</a>
+      <a href="/admin/qa.html" class="sidebar-link"><i class="ti ti-question-mark"></i>Q&A</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/admin/analytics.html" class="sidebar-link active"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/admin/writing.html" class="sidebar-link"><i class="ti ti-pencil"></i>Writing Tracker</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+    </div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header">
+      <div>
+        <h1>Analytics</h1>
+        <p>Reading data across your novels.</p>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total-reads">—</div>
+        <div class="stat-label">Total Reads</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total-readers">—</div>
+        <div class="stat-label">Total Readers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-completion-rate">—</div>
+        <div class="stat-label">Avg Completion Rate</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num stat-num-text"><span id="stat-top-chapter">—</span><span class="stat-sub" id="stat-top-chapter-views"></span></div>
+        <div class="stat-label">Most Read Chapter</div>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <div class="chart-card-header"><h3>Top 10 Chapters by Views</h3></div>
+      <div class="chart-wrap" id="top-chapters-wrap">
+        <canvas id="top-chapters-canvas"></canvas>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="card chart-card">
+        <div class="chart-card-header"><h3>New Readers, Last 12 Weeks</h3></div>
+        <div class="chart-wrap" id="signups-wrap">
+          <canvas id="signups-canvas"></canvas>
+        </div>
+      </div>
+      <div class="card chart-card">
+        <div class="chart-card-header"><h3>Referrer Breakdown</h3></div>
+        <div class="chart-wrap" id="referrer-wrap">
+          <canvas id="referrer-canvas"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <div class="chart-card-header">
+        <h3>Completion Funnel</h3>
+        <select id="funnel-book-select" class="form-input funnel-select"><option value="">Loading novels…</option></select>
+      </div>
+      <div class="chart-wrap tall" id="funnel-wrap">
+        <canvas id="funnel-canvas"></canvas>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<script type="module">
+import db from '../js/supabase.js';
+import { requireAdmin, escapeHtml } from '../js/app.js';
+
+if (!await requireAdmin()) throw new Error('Not admin');
+
+// ── Theme wiring: read real values from the site's own CSS variables,
+// so this page never drifts from the actual design system. ──
+const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const GOLD    = cssVar('--gold');
+const GOLD2   = cssVar('--gold2');
+const GOLDDIM = cssVar('--gold-dim');
+const GOLDDIM2= cssVar('--gold-dim2');
+const BLUE    = cssVar('--blue');
+const GREEN   = cssVar('--green');
+const RED     = cssVar('--red');
+const TEXT3   = cssVar('--text3');
+const BORDER  = cssVar('--border');
+const REFERRER_PALETTE = [GOLD, BLUE, GREEN, RED, GOLD2, TEXT3];
+
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = cssVar('--text2');
+Chart.defaults.borderColor = BORDER;
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) Chart.defaults.animation = false;
+
+function truncate(str, n) { return str.length > n ? str.slice(0, n - 1) + '…' : str; }
+
+function showEmpty(wrapId, icon, message) {
+  document.getElementById(wrapId).innerHTML =
+    `<div class="empty chart-empty"><div class="empty-icon">${icon}</div><p>${escapeHtml(message)}</p></div>`;
+}
+
+// ── Summary cards ──
+async function loadSummary() {
+  const { data, error } = await db.rpc('get_analytics_summary');
+  if (error) { console.error('get_analytics_summary failed:', error.message); return; }
+  const s = data?.[0];
+  document.getElementById('stat-total-reads').textContent    = Number(s?.total_reads ?? 0).toLocaleString();
+  document.getElementById('stat-total-readers').textContent  = Number(s?.total_readers ?? 0).toLocaleString();
+  document.getElementById('stat-completion-rate').textContent = `${Number(s?.avg_completion_rate ?? 0)}%`;
+
+  const topEl = document.getElementById('stat-top-chapter');
+  const subEl = document.getElementById('stat-top-chapter-views');
+  if (s?.most_read_chapter_title) {
+    topEl.textContent = truncate(s.most_read_chapter_title, 30);
+    subEl.textContent = `${Number(s.most_read_chapter_views).toLocaleString()} views`;
+  } else {
+    topEl.textContent = 'No reads yet';
+    subEl.textContent = '';
+  }
+}
+
+// ── Chart 1: Top chapters by views ──
+async function loadTopChapters() {
+  const { data, error } = await db.rpc('get_top_chapters_by_views', { p_limit: 10 });
+  if (error) { console.error('get_top_chapters_by_views failed:', error.message); showEmpty('top-chapters-wrap', '⚠', `Couldn't load: ${error.message}`); return; }
+  if (!data?.length) { showEmpty('top-chapters-wrap', '📖', 'No reads logged yet — this fills in once readers open a chapter.'); return; }
+
+  new Chart(document.getElementById('top-chapters-canvas'), {
+    type: 'bar',
+    data: {
+      labels: data.map(r => truncate(r.chapter_title, 30)),
+      datasets: [{
+        data: data.map(r => Number(r.view_count)),
+        backgroundColor: GOLD,
+        hoverBackgroundColor: GOLD2,
+        borderRadius: 3,
+        maxBarThickness: 22,
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => data[items[0].dataIndex].chapter_title,
+            afterTitle: (items) => data[items[0].dataIndex].book_title,
+          },
+        },
+      },
+      scales: {
+        x: { beginAtZero: true, ticks: { precision: 0 } },
+        y: { grid: { display: false }, ticks: { autoSkip: false } },
+      },
+    },
+  });
+}
+
+// ── Chart 2: New signups per week ──
+async function loadSignups() {
+  const { data, error } = await db.rpc('get_signups_per_week', { p_weeks_back: 12 });
+  if (error) { console.error('get_signups_per_week failed:', error.message); showEmpty('signups-wrap', '⚠', `Couldn't load: ${error.message}`); return; }
+  if (!data?.length || !data.some(r => Number(r.signup_count) > 0)) { showEmpty('signups-wrap', '📈', 'No new signups in this window yet.'); return; }
+
+  new Chart(document.getElementById('signups-canvas'), {
+    type: 'line',
+    data: {
+      labels: data.map(r => new Date(r.week_start).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })),
+      datasets: [{
+        data: data.map(r => Number(r.signup_count)),
+        borderColor: GOLD,
+        backgroundColor: GOLDDIM,
+        pointBackgroundColor: GOLD,
+        pointRadius: 3,
+        fill: true,
+        tension: 0.35,
+      }],
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { precision: 0 } },
+      },
+    },
+  });
+}
+
+// ── Chart 3: Referrer breakdown ──
+async function loadReferrers() {
+  const { data, error } = await db.rpc('get_referrer_breakdown');
+  if (error) { console.error('get_referrer_breakdown failed:', error.message); showEmpty('referrer-wrap', '⚠', `Couldn't load: ${error.message}`); return; }
+  if (!data?.length) { showEmpty('referrer-wrap', '🔗', 'No referrer data yet.'); return; }
+
+  const top = data.slice(0, 5);
+  const restCount = data.slice(5).reduce((sum, r) => sum + Number(r.view_count), 0);
+  const labels = top.map(r => r.referrer_source);
+  const values = top.map(r => Number(r.view_count));
+  if (restCount > 0) { labels.push('Other'); values.push(restCount); }
+
+  new Chart(document.getElementById('referrer-canvas'), {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: REFERRER_PALETTE.slice(0, labels.length),
+        borderColor: cssVar('--bg2'),
+        borderWidth: 2,
+      }],
+    },
+    options: {
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12 } } },
+    },
+  });
+}
+
+// ── Chart 4: Completion funnel, one book at a time ──
+let funnelChart = null;
+
+async function loadFunnel(bookId) {
+  if (!bookId) return;
+  const { data, error } = await db.rpc('get_book_completion_funnel', { p_book_id: bookId });
+
+  if (funnelChart) { funnelChart.destroy(); funnelChart = null; }
+
+  if (error) { console.error('get_book_completion_funnel failed:', error.message); showEmpty('funnel-wrap', '⚠', `Couldn't load: ${error.message}`); return; }
+  if (!data?.length) { showEmpty('funnel-wrap', '📖', 'This novel has no published chapters yet.'); return; }
+
+  // showEmpty() may have replaced the canvas on a previous book switch — restore it.
+  document.getElementById('funnel-wrap').innerHTML = '<canvas id="funnel-canvas"></canvas>';
+
+  funnelChart = new Chart(document.getElementById('funnel-canvas'), {
+    type: 'bar',
+    data: {
+      labels: data.map((r, i) => `Ch. ${i + 1}`),
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Views',
+          data: data.map(r => Number(r.view_count)),
+          backgroundColor: GOLDDIM2,
+          borderColor: GOLD,
+          borderWidth: 1,
+          borderRadius: 3,
+          yAxisID: 'y',
+        },
+        {
+          type: 'line',
+          label: 'Completion rate',
+          data: data.map(r => Number(r.completion_rate)),
+          borderColor: BLUE,
+          backgroundColor: BLUE,
+          pointBackgroundColor: BLUE,
+          pointRadius: 3,
+          tension: 0.3,
+          yAxisID: 'y1',
+        },
+      ],
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12 } },
+        tooltip: { callbacks: { title: (items) => data[items[0].dataIndex].chapter_title } },
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y:  { position: 'left', beginAtZero: true, title: { display: true, text: 'Views' }, ticks: { precision: 0 } },
+        y1: { position: 'right', beginAtZero: true, max: 100, title: { display: true, text: 'Completion %' }, grid: { display: false } },
+      },
+    },
+  });
+}
+
+async function loadBookOptions() {
+  const { data, error } = await db.from('books').select('id, title').order('title');
+  const select = document.getElementById('funnel-book-select');
+
+  if (error || !data?.length) {
+    select.innerHTML = '<option value="">No novels yet</option>';
+    showEmpty('funnel-wrap', '📚', 'Add a novel first to see its completion funnel.');
+    return;
+  }
+
+  select.innerHTML = data.map(b => `<option value="${b.id}">${escapeHtml(b.title)}</option>`).join('');
+  select.onchange = () => loadFunnel(select.value);
+  loadFunnel(select.value);
+}
+
+loadSummary();
+loadTopChapters();
+loadSignups();
+loadReferrers();
+loadBookOptions();
+</script>
+</body>
+</html>

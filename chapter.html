@@ -257,6 +257,25 @@ const REACTIONS = [
 let chapter = null;
 let myReaction = null;
 
+// ── Page view logging (Analytics dashboard) ──
+function getSessionId() {
+  let sid = sessionStorage.getItem('mnw_session_id');
+  if (!sid) {
+    sid = crypto.randomUUID();
+    sessionStorage.setItem('mnw_session_id', sid);
+  }
+  return sid;
+}
+async function logPageView() {
+  const { error } = await db.from('page_views').insert({
+    chapter_id: chapterId,
+    user_id: currentUser?.id ?? null,
+    session_id: getSessionId(),
+    referrer: document.referrer || null,
+  });
+  if (error) console.error('Page view log failed:', error.message);
+}
+
 // ── Font size (A− / A+), saved to localStorage ──
 const FONT_SIZES = [15, 17, 19, 21, 23, 25, 27];
 let fontIdx = parseInt(localStorage.getItem('mnw_font_idx'));
@@ -312,6 +331,7 @@ async function loadChapter() {
   loadLikeCount();
   loadReactionCounts();
   loadComments();
+  logPageView();
   if (book?.id && data.volumes?.sort_order != null) loadChapterNav(book.id, data.id);
 
   if (currentUser) {
