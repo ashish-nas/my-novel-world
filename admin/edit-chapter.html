@@ -188,6 +188,7 @@ window.saveChapter = async (publish) => {
 
   const content   = quill.root.innerHTML;
   const wc        = wordCount(content);
+  const oldWc     = chId ? (chapter?.word_count ?? 0) : 0;
   const scheduled = document.getElementById('c-scheduled').value;
   const isPublished = publish || document.getElementById('c-published').checked;
 
@@ -233,9 +234,21 @@ window.saveChapter = async (publish) => {
     chapter = data;
   }
 
+  await logWritingSession(wc - oldWc, chapter.id);
+
   document.getElementById('c-published').checked = isPublished;
   toast(isPublished ? 'Chapter published!' : 'Draft saved', 'success');
 };
+
+// ── Writing Tracker: log the net word-count change for this save ──
+async function logWritingSession(diff, chapterId) {
+  if (!diff) return; // no real writing happened this save (e.g. just toggled published)
+  const { error } = await db.from('writing_sessions').insert({
+    words_added: diff,
+    chapter_id: chapterId,
+  });
+  if (error) console.error('Writing session log failed:', error.message);
+}
 
 // ── Version history ──
 async function loadVersions() {

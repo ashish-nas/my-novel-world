@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Writing Tracker — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  .chart-card { padding: 1.5rem; margin-bottom: 1.5rem; }
+  .chart-card-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);
+  }
+  .chart-card-header h3 {
+    font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.2em;
+    color: var(--text3); text-transform: uppercase;
+  }
+  .chart-wrap { position: relative; height: 260px; }
+  .chart-empty { padding: 3rem 1rem; }
+
+  .goal-row { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--text2); flex-wrap: wrap; }
+  .goal-row input { width: 100px; }
+  .goal-track { height: 10px; background: var(--bg3); border-radius: 6px; overflow: hidden; margin: 0.9rem 0 0.6rem; }
+  .goal-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--gold), var(--gold2)); transition: width 0.3s ease; }
+  .goal-status { font-size: 0.8rem; color: var(--text2); }
+
+  .milestones-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+  .by-book-table td, .by-book-table th { white-space: nowrap; }
+  .by-book-table td:first-child { white-space: normal; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Content</div>
+      <a href="/admin/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+      <a href="/admin/books.html" class="sidebar-link"><i class="ti ti-books"></i>Novels</a>
+      <a href="/admin/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>Reading Order</a>
+      <a href="/admin/posts.html" class="sidebar-link"><i class="ti ti-speakerphone"></i>Updates</a>
+      <a href="/admin/countdown.html" class="sidebar-link"><i class="ti ti-hourglass"></i>Countdown</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/admin/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments</a>
+      <a href="/admin/qa.html" class="sidebar-link"><i class="ti ti-question-mark"></i>Q&A</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/admin/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/admin/writing.html" class="sidebar-link active"><i class="ti ti-pencil"></i>Writing Tracker</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+    </div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header">
+      <div>
+        <h1>Writing Tracker</h1>
+        <p>Your output, at a glance.</p>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total-words">—</div>
+        <div class="stat-label">Total Words Published</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-chapters-published">—</div>
+        <div class="stat-label">Chapters Published</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-week-words">—</div>
+        <div class="stat-label">Words This Week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-month-words">—</div>
+        <div class="stat-label">Words This Month</div>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <div class="chart-card-header"><h3>Daily Goal</h3></div>
+      <div class="goal-row">
+        <span>Target</span>
+        <input id="daily-goal-input" type="number" class="form-input" min="1" step="50">
+        <span>words / day</span>
+      </div>
+      <div class="goal-track"><div class="goal-fill" id="goal-fill"></div></div>
+      <div class="goal-status" id="goal-status">— / — words today</div>
+    </div>
+
+    <div class="card chart-card">
+      <div class="chart-card-header"><h3>Milestones</h3></div>
+      <div class="milestones-row" id="milestones"></div>
+    </div>
+
+    <div class="card chart-card">
+      <div class="chart-card-header"><h3>Daily Word Output — Last 30 Days</h3></div>
+      <div class="chart-wrap" id="daily-chart-wrap">
+        <canvas id="daily-chart-canvas"></canvas>
+      </div>
+    </div>
+
+    <div class="card chart-card" id="by-book-wrap">
+      <div class="chart-card-header"><h3>By Novel</h3></div>
+      <table class="admin-table by-book-table">
+        <thead><tr><th>Novel</th><th>Chapters Published</th><th>Words Published</th></tr></thead>
+        <tbody id="by-book-body"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<script type="module">
+import db from '../js/supabase.js';
+import { requireAdmin, escapeHtml } from '../js/app.js';
+
+if (!await requireAdmin()) throw new Error('Not admin');
+
+const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const GOLD  = cssVar('--gold');
+const RED   = cssVar('--red');
+const BORDER = cssVar('--border');
+
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = cssVar('--text2');
+Chart.defaults.borderColor = BORDER;
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) Chart.defaults.animation = false;
+
+const MILESTONES = [10000, 50000, 100000, 250000];
+const DAILY_GOAL_KEY = 'mnw_daily_goal';
+
+// Dates use UTC throughout, since the writing_sessions.date column defaults
+// to the database's CURRENT_DATE (UTC) — keeping the client's notion of
+// "today" in the same frame avoids off-by-one-day mismatches near midnight.
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+function startOfWeekISO() {
+  const d = new Date();
+  const day = d.getUTCDay();
+  const diff = day === 0 ? 6 : day - 1; // days since Monday
+  d.setUTCDate(d.getUTCDate() - diff);
+  return d.toISOString().slice(0, 10);
+}
+function startOfMonthISO() {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-01`;
+}
+
+function showEmpty(wrapId, icon, message) {
+  document.getElementById(wrapId).innerHTML =
+    `<div class="empty chart-empty"><div class="empty-icon">${icon}</div><p>${escapeHtml(message)}</p></div>`;
+}
+
+let sessionsData = [];
+let dailyGoal = Number(localStorage.getItem(DAILY_GOAL_KEY)) || 2000;
+
+// ── Chapters: total words, chapters published, per-book breakdown, milestones ──
+async function loadChapterStats() {
+  const { data, error } = await db.from('chapters')
+    .select('word_count, books(id, title)')
+    .eq('published', true);
+  if (error) { console.error('chapters fetch failed:', error.message); return; }
+
+  const chapters = data ?? [];
+  const totalWords = chapters.reduce((sum, c) => sum + (c.word_count || 0), 0);
+  document.getElementById('stat-total-words').textContent = totalWords.toLocaleString();
+  document.getElementById('stat-chapters-published').textContent = chapters.length.toLocaleString();
+
+  renderMilestones(totalWords);
+  renderByBook(chapters);
+}
+
+function renderMilestones(totalWords) {
+  document.getElementById('milestones').innerHTML = MILESTONES.map(m => {
+    const reached = totalWords >= m;
+    const label = `${(m / 1000).toLocaleString()}k words`;
+    return `<span class="badge${reached ? ' badge-gold' : ''}">${reached ? '<i class="ti ti-check"></i> ' : ''}${label}</span>`;
+  }).join('');
+}
+
+function renderByBook(chapters) {
+  const byBook = {};
+  for (const c of chapters) {
+    const key = c.books?.id ?? 'unknown';
+    if (!byBook[key]) byBook[key] = { title: c.books?.title ?? 'Untitled', chapters: 0, words: 0 };
+    byBook[key].chapters += 1;
+    byBook[key].words += c.word_count || 0;
+  }
+  const rows = Object.values(byBook).sort((a, b) => b.words - a.words);
+
+  if (!rows.length) {
+    document.getElementById('by-book-wrap').innerHTML =
+      '<div class="chart-card-header"><h3>By Novel</h3></div><div class="empty chart-empty"><div class="empty-icon">📚</div><p>No published chapters yet.</p></div>';
+    return;
+  }
+  document.getElementById('by-book-body').innerHTML = rows.map(r => `
+    <tr>
+      <td>${escapeHtml(r.title)}</td>
+      <td>${r.chapters.toLocaleString()}</td>
+      <td>${r.words.toLocaleString()}</td>
+    </tr>`).join('');
+}
+
+// ── Writing sessions: week/month/today totals, goal progress, 30-day chart ──
+async function loadSessions() {
+  const since = new Date();
+  since.setUTCDate(since.getUTCDate() - 30);
+  const sinceISO = since.toISOString().slice(0, 10);
+
+  const { data, error } = await db.from('writing_sessions')
+    .select('date, words_added')
+    .gte('date', sinceISO)
+    .order('date');
+  if (error) { console.error('writing_sessions fetch failed:', error.message); showEmpty('daily-chart-wrap', '⚠', `Couldn't load: ${error.message}`); return; }
+
+  sessionsData = data ?? [];
+  renderWeekMonthToday();
+  renderDailyChart();
+}
+
+function renderWeekMonthToday() {
+  const weekStart = startOfWeekISO();
+  const monthStart = startOfMonthISO();
+  const today = todayISO();
+
+  const weekTotal  = sessionsData.filter(s => s.date >= weekStart).reduce((sum, s) => sum + s.words_added, 0);
+  const monthTotal = sessionsData.filter(s => s.date >= monthStart).reduce((sum, s) => sum + s.words_added, 0);
+  const todayTotal = sessionsData.filter(s => s.date === today).reduce((sum, s) => sum + s.words_added, 0);
+
+  document.getElementById('stat-week-words').textContent  = weekTotal.toLocaleString();
+  document.getElementById('stat-month-words').textContent = monthTotal.toLocaleString();
+
+  updateGoalProgress(todayTotal);
+}
+
+function updateGoalProgress(todayTotal) {
+  const pct = Math.max(0, Math.min(100, Math.round((todayTotal / dailyGoal) * 100)));
+  document.getElementById('goal-fill').style.width = pct + '%';
+  document.getElementById('goal-status').textContent = `${todayTotal.toLocaleString()} / ${dailyGoal.toLocaleString()} words today`;
+}
+
+function renderDailyChart() {
+  const map = {};
+  for (const s of sessionsData) map[s.date] = (map[s.date] || 0) + s.words_added;
+
+  const days = [];
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setUTCDate(d.getUTCDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    days.push({ date: iso, words: map[iso] || 0 });
+  }
+
+  if (!days.some(d => d.words !== 0)) {
+    showEmpty('daily-chart-wrap', '✍', 'No writing sessions logged yet — this fills in the next time you save a chapter.');
+    return;
+  }
+
+  new Chart(document.getElementById('daily-chart-canvas'), {
+    type: 'bar',
+    data: {
+      labels: days.map(d => new Date(d.date + 'T00:00:00Z').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })),
+      datasets: [{
+        data: days.map(d => d.words),
+        backgroundColor: days.map(d => d.words < 0 ? RED : GOLD),
+        borderRadius: 2,
+        maxBarThickness: 14,
+      }],
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (item) => `${item.raw > 0 ? '+' : ''}${item.raw.toLocaleString()} words` } },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } },
+        y: { ticks: { precision: 0 } },
+      },
+    },
+  });
+}
+
+// ── Daily goal input ──
+const goalInput = document.getElementById('daily-goal-input');
+goalInput.value = dailyGoal;
+goalInput.addEventListener('change', () => {
+  const v = Math.max(1, Math.round(Number(goalInput.value)) || 2000);
+  dailyGoal = v;
+  goalInput.value = v;
+  localStorage.setItem(DAILY_GOAL_KEY, String(v));
+  const todayTotal = sessionsData.filter(s => s.date === todayISO()).reduce((sum, s) => sum + s.words_added, 0);
+  updateGoalProgress(todayTotal);
+});
+
+loadChapterStats();
+loadSessions();
+</script>
+</body>
+</html>
