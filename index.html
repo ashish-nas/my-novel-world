@@ -530,8 +530,8 @@
         <a href="#library" class="btn btn-primary"
           ><i class="ti ti-books"></i> Browse Novels</a
         >
-        <div class="hero-divider"></div>
-        <a href="/login.html#register" class="btn"
+        <div class="hero-divider" id="hero-join-divider"></div>
+        <a href="/login.html#register" class="btn" id="hero-join-btn"
           ><i class="ti ti-user-plus"></i> Join Free</a
         >
       </div>
@@ -695,6 +695,11 @@
 
       // ── Auth ──
       await initAuth();
+      if (currentUser) {
+        // Already have an account — no need to invite them to make one
+        document.getElementById("hero-join-btn")?.remove();
+        document.getElementById("hero-join-divider")?.remove();
+      }
 
       // ── Genre colors ──
       const GENRE_COLORS = {
