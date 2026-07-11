@@ -1,301 +1,457 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign In — My Novel World</title>
-<link rel="stylesheet" href="/css/style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<style>
-  .auth-wrap {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-  }
-  .auth-card {
-    width: 100%;
-    max-width: 420px;
-    background: var(--bg2);
-    border: 1px solid var(--border2);
-    border-radius: var(--radius-lg);
-    padding: 2.5rem;
-  }
-  .auth-logo {
-    font-family: 'Cinzel', serif;
-    font-size: 0.8rem;
-    letter-spacing: 0.3em;
-    color: var(--gold);
-    text-align: center;
-    margin-bottom: 2rem;
-    cursor: pointer;
-  }
-  .auth-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 2rem;
-    font-weight: 300;
-    text-align: center;
-    margin-bottom: 0.4rem;
-  }
-  .auth-sub {
-    font-size: 0.82rem;
-    color: var(--text2);
-    text-align: center;
-    margin-bottom: 2rem;
-  }
-  .auth-tabs {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0;
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    border-radius: var(--radius);
-    padding: 3px;
-    margin-bottom: 1.75rem;
-  }
-  .auth-tab {
-    padding: 0.55rem;
-    text-align: center;
-    font-family: 'Cinzel', serif;
-    font-size: 0.6rem;
-    letter-spacing: 0.15em;
-    color: var(--text2);
-    border-radius: 2px;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-    background: none;
-  }
-  .auth-tab.active {
-    background: var(--bg2);
-    color: var(--gold);
-    border: 1px solid var(--border2);
-  }
-  .auth-form { display: none; }
-  .auth-form.active { display: block; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In — My Novel World</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <style>
+      .auth-wrap {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+      }
+      .auth-card {
+        width: 100%;
+        max-width: 420px;
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: var(--radius-lg);
+        padding: 2.5rem;
+      }
+      .auth-logo {
+        font-family: "Cinzel", serif;
+        font-size: 0.8rem;
+        letter-spacing: 0.3em;
+        color: var(--gold);
+        text-align: center;
+        margin-bottom: 2rem;
+        cursor: pointer;
+      }
+      .auth-title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 2rem;
+        font-weight: 300;
+        text-align: center;
+        margin-bottom: 0.4rem;
+      }
+      .auth-sub {
+        font-size: 0.82rem;
+        color: var(--text2);
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .auth-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        border-radius: var(--radius);
+        padding: 3px;
+        margin-bottom: 1.75rem;
+      }
+      .auth-tab {
+        padding: 0.55rem;
+        text-align: center;
+        font-family: "Cinzel", serif;
+        font-size: 0.6rem;
+        letter-spacing: 0.15em;
+        color: var(--text2);
+        border-radius: 2px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        background: none;
+      }
+      .auth-tab.active {
+        background: var(--bg2);
+        color: var(--gold);
+        border: 1px solid var(--border2);
+      }
+      .auth-form {
+        display: none;
+      }
+      .auth-form.active {
+        display: block;
+      }
 
-  .btn-submit {
-    width: 100%;
-    padding: 0.8rem;
-    background: var(--gold);
-    border: none;
-    border-radius: var(--radius);
-    color: var(--bg);
-    font-family: 'Cinzel', serif;
-    font-size: 0.65rem;
-    letter-spacing: 0.15em;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-    margin-top: 0.5rem;
-  }
-  .btn-submit:hover { background: var(--gold2); }
-  .btn-submit:disabled { opacity: 0.5; cursor: default; }
-  .auth-error {
-    background: rgba(139,38,53,0.12);
-    border: 1px solid var(--red);
-    border-radius: var(--radius);
-    padding: 0.75rem 1rem;
-    font-size: 0.82rem;
-    color: #e08090;
-    margin-bottom: 1rem;
-    display: none;
-  }
-  .auth-success {
-    background: rgba(58,138,90,0.12);
-    border: 1px solid var(--green);
-    border-radius: var(--radius);
-    padding: 0.75rem 1rem;
-    font-size: 0.82rem;
-    color: #70c090;
-    margin-bottom: 1rem;
-    display: none;
-    text-align: center;
-  }
-  .forgot-link {
-    font-size: 0.75rem;
-    color: var(--text3);
-    text-align: right;
-    display: block;
-    margin-top: 0.4rem;
-    cursor: pointer;
-    transition: color 0.2s;
-  }
-  .forgot-link:hover { color: var(--gold); }
-</style>
-</head>
-<body>
+      .btn-submit {
+        width: 100%;
+        padding: 0.8rem;
+        background: var(--gold);
+        border: none;
+        border-radius: var(--radius);
+        color: var(--bg);
+        font-family: "Cinzel", serif;
+        font-size: 0.65rem;
+        letter-spacing: 0.15em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        margin-top: 0.5rem;
+      }
+      .btn-submit:hover {
+        background: var(--gold2);
+      }
+      .btn-submit:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .auth-error {
+        background: rgba(139, 38, 53, 0.12);
+        border: 1px solid var(--red);
+        border-radius: var(--radius);
+        padding: 0.75rem 1rem;
+        font-size: 0.82rem;
+        color: #e08090;
+        margin-bottom: 1rem;
+        display: none;
+      }
+      .auth-success {
+        background: rgba(58, 138, 90, 0.12);
+        border: 1px solid var(--green);
+        border-radius: var(--radius);
+        padding: 0.75rem 1rem;
+        font-size: 0.82rem;
+        color: #70c090;
+        margin-bottom: 1rem;
+        display: none;
+        text-align: center;
+      }
+      .forgot-link {
+        font-size: 0.75rem;
+        color: var(--text3);
+        text-align: right;
+        display: block;
+        margin-top: 0.4rem;
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+      .forgot-link:hover {
+        color: var(--gold);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Ambient background -->
+    <div
+      style="
+        position: fixed;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 600px;
+        height: 400px;
+        background: radial-gradient(
+          ellipse,
+          rgba(201, 168, 76, 0.05) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+        z-index: 0;
+      "
+    ></div>
 
-<!-- Ambient background -->
-<div style="position:fixed;top:0;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(201,168,76,0.05) 0%,transparent 70%);pointer-events:none;z-index:0"></div>
+    <div class="auth-wrap">
+      <div class="auth-card fade-up">
+        <div class="auth-logo" onclick="location.href = '/'">
+          MY NOVEL WORLD
+        </div>
 
-<div class="auth-wrap">
-  <div class="auth-card fade-up">
+        <h1 class="auth-title" id="auth-title">Welcome back</h1>
+        <p class="auth-sub" id="auth-sub">Sign in to your reader account</p>
 
-    <div class="auth-logo" onclick="location.href='/'">MY NOVEL WORLD</div>
+        <!-- Tabs -->
+        <div class="auth-tabs">
+          <button
+            class="auth-tab active"
+            id="tab-login"
+            onclick="switchTab('login')"
+          >
+            Sign In
+          </button>
+          <button
+            class="auth-tab"
+            id="tab-register"
+            onclick="switchTab('register')"
+          >
+            Join Free
+          </button>
+        </div>
 
-    <h1 class="auth-title" id="auth-title">Welcome back</h1>
-    <p class="auth-sub" id="auth-sub">Sign in to your reader account</p>
+        <!-- Error / Success messages -->
+        <div class="auth-error" id="auth-error"></div>
+        <div class="auth-success" id="auth-success"></div>
 
-    <!-- Tabs -->
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Sign In</button>
-      <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Join Free</button>
+        <!-- LOGIN FORM -->
+        <div class="auth-form active" id="form-login">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input
+              id="login-email"
+              type="email"
+              class="form-input"
+              placeholder="your@email.com"
+              autocomplete="email"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input
+              id="login-password"
+              type="password"
+              class="form-input"
+              placeholder="••••••••"
+              autocomplete="current-password"
+            />
+            <span class="forgot-link" onclick="forgotPassword()"
+              >Forgot password?</span
+            >
+          </div>
+          <button class="btn-submit" id="btn-login" onclick="signIn()">
+            Sign In
+          </button>
+        </div>
+
+        <!-- REGISTER FORM -->
+        <div class="auth-form" id="form-register">
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input
+              id="reg-username"
+              type="text"
+              class="form-input"
+              placeholder="Choose a username"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input
+              id="reg-email"
+              type="email"
+              class="form-input"
+              placeholder="your@email.com"
+              autocomplete="email"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input
+              id="reg-password"
+              type="password"
+              class="form-input"
+              placeholder="At least 6 characters"
+              autocomplete="new-password"
+            />
+          </div>
+          <button class="btn-submit" id="btn-register" onclick="register()">
+            Create Account
+          </button>
+          <p
+            style="
+              font-size: 0.72rem;
+              color: var(--text3);
+              text-align: center;
+              margin-top: 1rem;
+            "
+          >
+            By joining you agree to read amazing novels and enjoy every chapter.
+          </p>
+        </div>
+      </div>
     </div>
 
-    <!-- Error / Success messages -->
-    <div class="auth-error" id="auth-error"></div>
-    <div class="auth-success" id="auth-success"></div>
+    <script type="module">
+      import db from "/js/supabase.js";
 
+      const justVerified =
+        new URLSearchParams(location.search).get("verified") === "true";
 
+      // Check if already logged in — skipped when arriving fresh from an email
+      // confirmation link, so the reader actually sees the login page and signs
+      // in deliberately instead of being silently bounced through /admin.
+      if (!justVerified) {
+        const {
+          data: { session },
+        } = await db.auth.getSession();
+        if (session) {
+          const redir =
+            new URLSearchParams(location.search).get("redirect") || "/admin/";
+          location.href = redir;
+        }
+      }
 
-    <!-- LOGIN FORM -->
-    <div class="auth-form active" id="form-login">
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input id="login-email" type="email" class="form-input" placeholder="your@email.com" autocomplete="email">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input id="login-password" type="password" class="form-input" placeholder="••••••••" autocomplete="current-password">
-        <span class="forgot-link" onclick="forgotPassword()">Forgot password?</span>
-      </div>
-      <button class="btn-submit" id="btn-login" onclick="signIn()">Sign In</button>
-    </div>
+      // Switch between sign in / register tabs
+      window.switchTab = (tab) => {
+        document
+          .getElementById("tab-login")
+          .classList.toggle("active", tab === "login");
+        document
+          .getElementById("tab-register")
+          .classList.toggle("active", tab === "register");
+        document
+          .getElementById("form-login")
+          .classList.toggle("active", tab === "login");
+        document
+          .getElementById("form-register")
+          .classList.toggle("active", tab === "register");
+        document.getElementById("auth-title").textContent =
+          tab === "login" ? "Welcome back" : "Join the library";
+        document.getElementById("auth-sub").textContent =
+          tab === "login"
+            ? "Sign in to your reader account"
+            : "Create a free account to bookmark and track your reading";
+        clearMessages();
+      };
 
-    <!-- REGISTER FORM -->
-    <div class="auth-form" id="form-register">
-      <div class="form-group">
-        <label class="form-label">Username</label>
-        <input id="reg-username" type="text" class="form-input" placeholder="Choose a username">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input id="reg-email" type="email" class="form-input" placeholder="your@email.com" autocomplete="email">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input id="reg-password" type="password" class="form-input" placeholder="At least 6 characters" autocomplete="new-password">
-      </div>
-      <button class="btn-submit" id="btn-register" onclick="register()">Create Account</button>
-      <p style="font-size:.72rem;color:var(--text3);text-align:center;margin-top:1rem">
-        By joining you agree to read amazing novels and enjoy every chapter.
-      </p>
-    </div>
+      // Auto-switch to register if URL has #register
+      if (location.hash === "#register") switchTab("register");
 
-  </div>
-</div>
+      // Arriving fresh from a confirmed email link
+      if (justVerified) {
+        switchTab("login");
+        showSuccess("Email confirmed! Sign in below to continue.");
+      }
 
-<script type="module">
-import db from '/js/supabase.js';
+      function showError(msg) {
+        const el = document.getElementById("auth-error");
+        el.textContent = msg;
+        el.style.display = "block";
+        document.getElementById("auth-success").style.display = "none";
+      }
+      function showSuccess(msg) {
+        const el = document.getElementById("auth-success");
+        el.textContent = msg;
+        el.style.display = "block";
+        document.getElementById("auth-error").style.display = "none";
+      }
+      function clearMessages() {
+        document.getElementById("auth-error").style.display = "none";
+        document.getElementById("auth-success").style.display = "none";
+      }
+      function setLoading(btnId, loading) {
+        const btn = document.getElementById(btnId);
+        btn.disabled = loading;
+        btn.textContent = loading
+          ? "Please wait..."
+          : btn.id === "btn-login"
+            ? "Sign In"
+            : "Create Account";
+      }
 
-// Check if already logged in
-const { data: { session } } = await db.auth.getSession();
-if (session) {
-  const redir = new URLSearchParams(location.search).get('redirect') || '/admin/';
-  location.href = redir;
-}
+      // Sign in with email
+      window.signIn = async () => {
+        const email = document.getElementById("login-email").value.trim();
+        const password = document.getElementById("login-password").value;
+        if (!email || !password) {
+          showError("Please enter your email and password.");
+          return;
+        }
 
-// Switch between sign in / register tabs
-window.switchTab = (tab) => {
-  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
-  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
-  document.getElementById('form-login').classList.toggle('active', tab === 'login');
-  document.getElementById('form-register').classList.toggle('active', tab === 'register');
-  document.getElementById('auth-title').textContent = tab === 'login' ? 'Welcome back' : 'Join the library';
-  document.getElementById('auth-sub').textContent = tab === 'login'
-    ? 'Sign in to your reader account'
-    : 'Create a free account to bookmark and track your reading';
-  clearMessages();
-};
+        setLoading("btn-login", true);
+        const { error } = await db.auth.signInWithPassword({ email, password });
+        setLoading("btn-login", false);
 
-// Auto-switch to register if URL has #register
-if (location.hash === '#register') switchTab('register');
+        if (error) {
+          showError(error.message);
+          return;
+        }
+        const redir =
+          new URLSearchParams(location.search).get("redirect") || "/admin/";
+        location.href = redir;
+      };
 
-function showError(msg) {
-  const el = document.getElementById('auth-error');
-  el.textContent = msg; el.style.display = 'block';
-  document.getElementById('auth-success').style.display = 'none';
-}
-function showSuccess(msg) {
-  const el = document.getElementById('auth-success');
-  el.textContent = msg; el.style.display = 'block';
-  document.getElementById('auth-error').style.display = 'none';
-}
-function clearMessages() {
-  document.getElementById('auth-error').style.display = 'none';
-  document.getElementById('auth-success').style.display = 'none';
-}
-function setLoading(btnId, loading) {
-  const btn = document.getElementById(btnId);
-  btn.disabled = loading;
-  btn.textContent = loading ? 'Please wait...' : btn.id === 'btn-login' ? 'Sign In' : 'Create Account';
-}
+      // Register
+      window.register = async () => {
+        const username = document.getElementById("reg-username").value.trim();
+        const email = document.getElementById("reg-email").value.trim();
+        const password = document.getElementById("reg-password").value;
 
-// Sign in with email
-window.signIn = async () => {
-  const email    = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-  if (!email || !password) { showError('Please enter your email and password.'); return; }
+        if (!username) {
+          showError("Please choose a username.");
+          return;
+        }
+        if (!email) {
+          showError("Please enter your email.");
+          return;
+        }
+        if (password.length < 6) {
+          showError("Password must be at least 6 characters.");
+          return;
+        }
 
-  setLoading('btn-login', true);
-  const { error } = await db.auth.signInWithPassword({ email, password });
-  setLoading('btn-login', false);
+        // Check username taken
+        const { data: existing } = await db
+          .from("profiles")
+          .select("id")
+          .eq("username", username)
+          .single();
+        if (existing) {
+          showError("That username is already taken. Try another.");
+          return;
+        }
 
-  if (error) { showError(error.message); return; }
-  const redir = new URLSearchParams(location.search).get('redirect') || '/admin/';
-  location.href = redir;
-};
+        setLoading("btn-register", true);
+        const { data, error } = await db.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo:
+              window.location.origin + "/login.html?verified=true",
+          },
+        });
+        setLoading("btn-register", false);
 
-// Register
-window.register = async () => {
-  const username = document.getElementById('reg-username').value.trim();
-  const email    = document.getElementById('reg-email').value.trim();
-  const password = document.getElementById('reg-password').value;
+        if (error) {
+          showError(error.message);
+          return;
+        }
 
-  if (!username) { showError('Please choose a username.'); return; }
-  if (!email)    { showError('Please enter your email.'); return; }
-  if (password.length < 6) { showError('Password must be at least 6 characters.'); return; }
+        // Update profile with chosen username
+        if (data.user) {
+          await db.from("profiles").update({ username }).eq("id", data.user.id);
+        }
 
-  // Check username taken
-  const { data: existing } = await db.from('profiles').select('id').eq('username', username).single();
-  if (existing) { showError('That username is already taken. Try another.'); return; }
+        showSuccess(
+          "Account created! Check your email to confirm, then sign in.",
+        );
+      };
 
-  setLoading('btn-register', true);
-  const { data, error } = await db.auth.signUp({ email, password });
-  setLoading('btn-register', false);
+      // Forgot password
+      window.forgotPassword = async () => {
+        const email = document.getElementById("login-email").value.trim();
+        if (!email) {
+          showError(
+            "Enter your email above first, then click Forgot password.",
+          );
+          return;
+        }
+        const { error } = await db.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + "/login.html",
+        });
+        if (error) {
+          showError(error.message);
+          return;
+        }
+        showSuccess("Password reset email sent! Check your inbox.");
+      };
 
-  if (error) { showError(error.message); return; }
-
-  // Update profile with chosen username
-  if (data.user) {
-    await db.from('profiles').update({ username }).eq('id', data.user.id);
-  }
-
-  showSuccess('Account created! Check your email to confirm, then sign in.');
-};
-
-
-
-// Forgot password
-window.forgotPassword = async () => {
-  const email = document.getElementById('login-email').value.trim();
-  if (!email) { showError('Enter your email above first, then click Forgot password.'); return; }
-  const { error } = await db.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + '/login.html'
-  });
-  if (error) { showError(error.message); return; }
-  showSuccess('Password reset email sent! Check your inbox.');
-};
-
-// Allow Enter key to submit
-document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter') return;
-  const loginActive = document.getElementById('form-login').classList.contains('active');
-  if (loginActive) window.signIn();
-  else window.register();
-});
-</script>
-</body>
+      // Allow Enter key to submit
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter") return;
+        const loginActive = document
+          .getElementById("form-login")
+          .classList.contains("active");
+        if (loginActive) window.signIn();
+        else window.register();
+      });
+    </script>
+  </body>
 </html>
