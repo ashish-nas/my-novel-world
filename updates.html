@@ -1,115 +1,350 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Updates — My Novel World</title>
-<link rel="stylesheet" href="/css/style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<style>
-  .updates-header { text-align: center; margin-bottom: 3rem; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Updates — My Novel World</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <style>
+      .updates-header {
+        text-align: center;
+        margin-bottom: 3rem;
+      }
 
-  .update-card { max-width: 680px; margin: 0 auto 2.75rem; padding-bottom: 2.75rem; border-bottom: 1px solid var(--border); }
-  .update-card:last-child { border-bottom: none; }
-  .update-meta { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
-  .update-date { font-size: 0.72rem; color: var(--text3); }
-  .update-image { width: 100%; border-radius: var(--radius-lg); margin-bottom: 1.25rem; border: 1px solid var(--border); }
-  .update-title { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 300; margin-bottom: 1rem; }
-  .update-body { font-size: 0.95rem; color: var(--text2); line-height: 1.8; position: relative; }
-  .update-body p { margin-bottom: 1em; }
-  .update-body.collapsed { max-height: 130px; overflow: hidden; }
-  .update-body.collapsed::after {
-    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 56px;
-    background: linear-gradient(transparent, var(--bg));
-  }
-  .update-toggle {
-    display: inline-block; margin-top: 0.6rem; font-family: 'Cinzel', serif; font-size: 0.6rem;
-    letter-spacing: 0.15em; color: var(--gold); background: none; border: none; cursor: pointer;
-    padding: 0; text-transform: uppercase;
-  }
-  .update-toggle:hover { text-decoration: underline; }
-</style>
-</head>
-<body>
+      .update-card {
+        max-width: 680px;
+        margin: 0 auto 2.75rem;
+        padding-bottom: 2.75rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .update-card:last-child {
+        border-bottom: none;
+      }
+      .update-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+      .update-date {
+        font-size: 0.72rem;
+        color: var(--text3);
+      }
+      .update-image {
+        width: 100%;
+        border-radius: var(--radius-lg);
+        margin-bottom: 1.25rem;
+        border: 1px solid var(--border);
+      }
+      .update-title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.6rem;
+        font-weight: 300;
+        margin-bottom: 1rem;
+      }
+      .update-body {
+        font-size: 0.95rem;
+        color: var(--text2);
+        line-height: 1.8;
+        position: relative;
+      }
+      .update-body p {
+        margin-bottom: 1em;
+      }
+      .update-body.collapsed {
+        max-height: 130px;
+        overflow: hidden;
+      }
+      .update-body.collapsed::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        background: linear-gradient(transparent, var(--bg));
+      }
+      .update-toggle {
+        display: inline-block;
+        margin-top: 0.6rem;
+        font-family: "Cinzel", serif;
+        font-size: 0.6rem;
+        letter-spacing: 0.15em;
+        color: var(--gold);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        text-transform: uppercase;
+      }
+      .update-toggle:hover {
+        text-decoration: underline;
+      }
 
-<nav class="nav" id="main-nav">
-  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
-  <ul class="nav-links">
-    <li><a href="/">Library</a></li>
-    <li><a href="/updates.html" class="active">Updates</a></li>
-    <li><a href="/reading-order.html">Reading Order</a></li>
-    <li><a href="/qa.html">Q&A</a></li>
-  </ul>
-  <div id="nav-right" class="nav-right"></div>
-</nav>
+      /* ── Reactions (same visual language as chapter.html) ── */
+      .reaction-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin-top: 1.5rem;
+      }
+      .reaction-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.6rem 0.9rem;
+        border: 1px solid var(--border2);
+        background: var(--bg2);
+        border-radius: var(--radius-lg);
+        cursor: pointer;
+        transition: all 0.2s;
+        min-width: 76px;
+      }
+      .reaction-btn:hover {
+        border-color: var(--gold);
+      }
+      .reaction-btn.active {
+        border-color: var(--gold);
+        background: var(--gold-dim);
+      }
+      .reaction-emoji {
+        font-size: 1.3rem;
+      }
+      .reaction-label {
+        font-size: 0.62rem;
+        color: var(--text3);
+        text-align: center;
+      }
+      .reaction-count {
+        font-size: 0.72rem;
+        color: var(--text2);
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav" id="main-nav">
+      <span class="nav-logo" onclick="location.href = '/'">MY NOVEL WORLD</span>
+      <ul class="nav-links">
+        <li><a href="/">Library</a></li>
+        <li>
+          <a href="/updates.html" class="active"
+            >Updates<span class="nav-badge" id="updates-badge"></span
+          ></a>
+        </li>
+        <li><a href="/reading-order.html">Reading Order</a></li>
+        <li><a href="/qa.html">Q&A</a></li>
+      </ul>
+      <div id="nav-right" class="nav-right"></div>
+    </nav>
 
-<div class="page">
-  <div class="container">
+    <div class="page">
+      <div class="container">
+        <div class="updates-header fade-up">
+          <p class="eyebrow">From the Author</p>
+          <h1 class="section-title">Updates</h1>
+        </div>
 
-    <div class="updates-header fade-up">
-      <p class="eyebrow">From the Author</p>
-      <h1 class="section-title">Updates</h1>
+        <div id="updates-feed">
+          <div class="empty">
+            <div class="empty-icon">📣</div>
+            <p>Loading updates...</p>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div id="updates-feed">
-      <div class="empty"><div class="empty-icon">📣</div><p>Loading updates...</p></div>
-    </div>
+    <script type="module">
+      import db from "/js/supabase.js";
+      import { initAuth, escapeHtml, toast, currentUser } from "/js/app.js";
 
-  </div>
-</div>
+      await initAuth();
 
-<script type="module">
-import db from '/js/supabase.js';
-import { initAuth, escapeHtml } from '/js/app.js';
+      const TAG_LABELS = {
+        announcement: "Announcement",
+        "behind-scenes": "Behind the Scenes",
+        progress: "Writing Progress",
+        personal: "Personal Note",
+      };
 
-await initAuth();
+      function stripHtml(html) {
+        return (html || "")
+          .replace(/<[^>]*>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
 
-const TAG_LABELS = { announcement: 'Announcement', 'behind-scenes': 'Behind the Scenes', progress: 'Writing Progress', personal: 'Personal Note' };
+      // ── Reactions — same pattern as chapter.html's, keyed by post_id instead
+      // of chapter_id since a single page can show many posts at once. ──
+      const REACTIONS = [
+        { type: "loved", emoji: "❤️", label: "Loved it" },
+        { type: "shocked", emoji: "😱", label: "Shocked" },
+        { type: "cried", emoji: "😢", label: "Cried" },
+        { type: "laughed", emoji: "😂", label: "Laughed" },
+        { type: "angry", emoji: "😤", label: "Angry" },
+        { type: "mindblown", emoji: "🤯", label: "Mind-blown" },
+      ];
+      const myReactionByPost = {};
 
-function stripHtml(html) {
-  return (html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-}
+      function renderReactionsForPost(postId) {
+        const row = document.getElementById(`reaction-row-${postId}`);
+        if (!row) return;
+        row.innerHTML = REACTIONS.map(
+          (r) => `
+    <button class="reaction-btn" id="reaction-${postId}-${r.type}" onclick="toggleReaction('${postId}','${r.type}')">
+      <span class="reaction-emoji">${r.emoji}</span>
+      <span class="reaction-label">${r.label}</span>
+      <span class="reaction-count" id="reaction-count-${postId}-${r.type}">0</span>
+    </button>`,
+        ).join("");
+      }
 
-async function loadUpdates() {
-  const { data, error } = await db.from('author_posts')
-    .select('*').eq('published', true).order('created_at', { ascending: false });
+      // Fetches reaction rows for the given posts in a single query, tallies
+      // counts client-side, and marks the current user's own reaction (if any).
+      async function loadReactionsForPosts(postIds) {
+        if (!postIds.length) return;
+        const { data, error } = await db
+          .from("post_reactions")
+          .select("post_id, user_id, reaction_type")
+          .in("post_id", postIds);
+        if (error) {
+          console.error("post_reactions fetch failed:", error.message);
+          return;
+        }
 
-  const feed = document.getElementById('updates-feed');
-  if (error) {
-    console.error('loadUpdates failed:', error.message);
-    feed.innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load updates right now.</p></div>`;
-    return;
-  }
-  if (!data?.length) {
-    feed.innerHTML = `<div class="empty"><div class="empty-icon">📣</div><p>No updates yet — check back soon.</p></div>`;
-    return;
-  }
+        const counts = {};
+        (data || []).forEach((r) => {
+          counts[r.post_id] = counts[r.post_id] || {};
+          counts[r.post_id][r.reaction_type] =
+            (counts[r.post_id][r.reaction_type] || 0) + 1;
+          if (currentUser && r.user_id === currentUser.id)
+            myReactionByPost[r.post_id] = r.reaction_type;
+        });
 
-  feed.innerHTML = data.map(p => {
-    const plain = stripHtml(p.content);
-    const needsToggle = plain.length > 400;
-    return `
+        postIds.forEach((postId) => {
+          REACTIONS.forEach((r) => {
+            const el = document.getElementById(
+              `reaction-count-${postId}-${r.type}`,
+            );
+            if (el) el.textContent = counts[postId]?.[r.type] || 0;
+          });
+          const mine = myReactionByPost[postId];
+          if (mine)
+            document
+              .getElementById(`reaction-${postId}-${mine}`)
+              ?.classList.add("active");
+        });
+      }
+
+      window.toggleReaction = async (postId, type) => {
+        if (!currentUser) {
+          location.href =
+            "/login.html?redirect=" + encodeURIComponent(location.pathname);
+          return;
+        }
+
+        const current = myReactionByPost[postId];
+        if (current === type) {
+          // Clicking the same reaction again removes it
+          const { error } = await db
+            .from("post_reactions")
+            .delete()
+            .eq("post_id", postId)
+            .eq("user_id", currentUser.id);
+          if (error) {
+            console.error("Post reaction delete failed:", error.message);
+            toast("Error: " + error.message, "error");
+            return;
+          }
+          document
+            .getElementById(`reaction-${postId}-${type}`)
+            .classList.remove("active");
+          myReactionByPost[postId] = null;
+        } else {
+          const { error } = await db
+            .from("post_reactions")
+            .upsert(
+              { post_id: postId, user_id: currentUser.id, reaction_type: type },
+              { onConflict: "user_id,post_id" },
+            );
+          if (error) {
+            console.error("Post reaction upsert failed:", error.message);
+            toast("Error: " + error.message, "error");
+            return;
+          }
+          if (current)
+            document
+              .getElementById(`reaction-${postId}-${current}`)
+              ?.classList.remove("active");
+          document
+            .getElementById(`reaction-${postId}-${type}`)
+            .classList.add("active");
+          myReactionByPost[postId] = type;
+        }
+        loadReactionsForPosts([postId]);
+      };
+
+      // ── "Seen" tracking for the nav badge — visiting this page with a
+      // successful fetch means the reader is caught up as of right now. ──
+      function markUpdatesSeen() {
+        localStorage.setItem("mnw_updates_last_seen", new Date().toISOString());
+        document.getElementById("updates-badge")?.classList.remove("show");
+      }
+
+      async function loadUpdates() {
+        const { data, error } = await db
+          .from("author_posts")
+          .select("*")
+          .eq("published", true)
+          .order("created_at", { ascending: false });
+
+        const feed = document.getElementById("updates-feed");
+        if (error) {
+          console.error("loadUpdates failed:", error.message);
+          feed.innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load updates right now.</p></div>`;
+          return;
+        }
+        markUpdatesSeen();
+        if (!data?.length) {
+          feed.innerHTML = `<div class="empty"><div class="empty-icon">📣</div><p>No updates yet — check back soon.</p></div>`;
+          return;
+        }
+
+        feed.innerHTML = data
+          .map((p) => {
+            const plain = stripHtml(p.content);
+            const needsToggle = plain.length > 400;
+            return `
     <article class="update-card">
       <div class="update-meta">
-        <span class="badge badge-gold">${TAG_LABELS[p.tag] ?? escapeHtml(p.tag ?? '')}</span>
+        <span class="badge badge-gold">${TAG_LABELS[p.tag] ?? escapeHtml(p.tag ?? "")}</span>
         <span class="update-date">${new Date(p.created_at).toLocaleDateString()}</span>
       </div>
-      ${p.image_url ? `<img class="update-image" src="${p.image_url}" alt="">` : ''}
+      ${p.image_url ? `<img class="update-image" src="${p.image_url}" alt="">` : ""}
       <h2 class="update-title">${escapeHtml(p.title)}</h2>
-      <div class="update-body ${needsToggle ? 'collapsed' : ''}" id="body-${p.id}">${p.content ?? ''}</div>
-      ${needsToggle ? `<button class="update-toggle" id="toggle-${p.id}" onclick="toggleExpand('${p.id}')">Read more</button>` : ''}
+      <div class="update-body ${needsToggle ? "collapsed" : ""}" id="body-${p.id}">${p.content ?? ""}</div>
+      ${needsToggle ? `<button class="update-toggle" id="toggle-${p.id}" onclick="toggleExpand('${p.id}')">Read more</button>` : ""}
+      <div class="reaction-row" id="reaction-row-${p.id}"></div>
     </article>`;
-  }).join('');
-}
+          })
+          .join("");
 
-window.toggleExpand = (id) => {
-  const body = document.getElementById(`body-${id}`);
-  const btn  = document.getElementById(`toggle-${id}`);
-  const nowCollapsed = body.classList.toggle('collapsed');
-  btn.textContent = nowCollapsed ? 'Read more' : 'Show less';
-};
+        data.forEach((p) => renderReactionsForPost(p.id));
+        loadReactionsForPosts(data.map((p) => p.id));
+      }
 
-loadUpdates();
-</script>
-</body>
+      window.toggleExpand = (id) => {
+        const body = document.getElementById(`body-${id}`);
+        const btn = document.getElementById(`toggle-${id}`);
+        const nowCollapsed = body.classList.toggle("collapsed");
+        btn.textContent = nowCollapsed ? "Read more" : "Show less";
+      };
+
+      loadUpdates();
+    </script>
+  </body>
 </html>

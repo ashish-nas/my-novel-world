@@ -1,34 +1,36 @@
 // ── app.js — shared across all pages ─────────
-import db from './supabase.js';
+import db from "./supabase.js";
 
-export let currentUser    = null;
+export let currentUser = null;
 export let currentProfile = null;
 
 // ── Core: get session + profile once ──
 async function getSessionAndProfile() {
-  const { data: { session } } = await db.auth.getSession();
+  const {
+    data: { session },
+  } = await db.auth.getSession();
   if (!session?.user) return { user: null, profile: null };
 
   const user = session.user;
 
   // Check localStorage cache first (avoids slow DB round-trip)
-  const cached = localStorage.getItem('mnw_profile');
+  const cached = localStorage.getItem("mnw_profile");
   if (cached) {
     try {
       const p = JSON.parse(cached);
       if (p.id === user.id) return { user, profile: p };
-    } catch(e) {}
+    } catch (e) {}
   }
 
   // Fetch from DB
   const { data: profile } = await db
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
     .single();
 
   if (profile) {
-    localStorage.setItem('mnw_profile', JSON.stringify(profile));
+    localStorage.setItem("mnw_profile", JSON.stringify(profile));
     return { user, profile };
   }
 
@@ -36,11 +38,11 @@ async function getSessionAndProfile() {
   // promote your own account to 'admin' once in Supabase → Table Editor (see design doc §10.4).
   const newP = {
     id: user.id,
-    username: user.email.split('@')[0],
-    role: 'reader'
+    username: user.email.split("@")[0],
+    role: "reader",
   };
-  await db.from('profiles').insert(newP);
-  localStorage.setItem('mnw_profile', JSON.stringify(newP));
+  await db.from("profiles").insert(newP);
+  localStorage.setItem("mnw_profile", JSON.stringify(newP));
   return { user, profile: newP };
 }
 
@@ -49,13 +51,13 @@ async function getSessionAndProfile() {
 // `<script>document.documentElement.classList.add('auth-pending')</script>`
 // at the very top of <head>; this removes it once requireAuth/requireAdmin succeeds.
 function revealGatedContent() {
-  document.documentElement.classList.remove('auth-pending');
+  document.documentElement.classList.remove("auth-pending");
 }
 
 // ── initAuth — for public pages ──
 export async function initAuth() {
   const { user, profile } = await getSessionAndProfile();
-  currentUser    = user;
+  currentUser = user;
   currentProfile = profile;
   renderNav();
 }
@@ -64,10 +66,11 @@ export async function initAuth() {
 export async function requireAuth() {
   const { user, profile } = await getSessionAndProfile();
   if (!user) {
-    location.href = '/login.html?redirect=' + encodeURIComponent(location.pathname);
+    location.href =
+      "/login.html?redirect=" + encodeURIComponent(location.pathname);
     return false;
   }
-  currentUser    = user;
+  currentUser = user;
   currentProfile = profile;
   renderNav();
   revealGatedContent();
@@ -79,16 +82,17 @@ export async function requireAdmin() {
   const { user, profile } = await getSessionAndProfile();
 
   if (!user) {
-    location.href = '/login.html?redirect=' + encodeURIComponent(location.pathname);
+    location.href =
+      "/login.html?redirect=" + encodeURIComponent(location.pathname);
     return false;
   }
 
-  currentUser    = user;
+  currentUser = user;
   currentProfile = profile;
   renderNav();
 
-  if (currentProfile?.role !== 'admin') {
-    location.href = '/';
+  if (currentProfile?.role !== "admin") {
+    location.href = "/";
     return false;
   }
 
@@ -97,17 +101,17 @@ export async function requireAdmin() {
 }
 
 export function isAdmin() {
-  return currentProfile?.role === 'admin';
+  return currentProfile?.role === "admin";
 }
 
 // ── Nav render ──
 function renderNav() {
-  const right = document.getElementById('nav-right');
+  const right = document.getElementById("nav-right");
   if (!right) return;
   if (currentUser) {
     right.innerHTML = `
       <a href="/profile.html" class="nav-username" title="View profile">${escapeHtml(currentProfile?.username ?? currentUser.email)}</a>
-      ${isAdmin() ? `<a href="/admin/" class="btn-nav gold">Admin</a>` : ''}
+      ${isAdmin() ? `<a href="/admin/" class="btn-nav gold">Admin</a>` : ""}
       <a href="/my-library.html" class="btn-nav">My Library</a>
       <button class="btn-nav" onclick="signOut()">Sign out</button>`;
   } else {
@@ -115,44 +119,73 @@ function renderNav() {
       <a href="/login.html" class="btn-nav">Sign in</a>
       <a href="/login.html#register" class="btn-nav gold">Join free</a>`;
   }
+  checkNewPosts();
+}
+
+// ── "New" badge on the Updates nav link. Compares the newest published
+// author_posts.created_at against a per-browser "last seen" timestamp.
+// No-ops on pages without a nav-links list (admin, login) since the
+// badge element simply won't exist there. ──
+const UPDATES_SEEN_KEY = "mnw_updates_last_seen";
+
+async function checkNewPosts() {
+  const badge = document.getElementById("updates-badge");
+  if (!badge) return;
+  const lastSeen =
+    localStorage.getItem(UPDATES_SEEN_KEY) || "1970-01-01T00:00:00.000Z";
+  const { count, error } = await db
+    .from("author_posts")
+    .select("id", { count: "exact", head: true })
+    .eq("published", true)
+    .gt("created_at", lastSeen);
+  if (error) {
+    console.error("New-post check failed:", error.message);
+    return;
+  }
+  if (count > 0) {
+    badge.textContent = count > 9 ? "9+" : String(count);
+    badge.classList.add("show");
+  }
 }
 
 // ── Sign out — clear cache ──
 window.signOut = async () => {
-  localStorage.removeItem('mnw_profile');
+  localStorage.removeItem("mnw_profile");
   await db.auth.signOut();
-  location.href = '/';
+  location.href = "/";
 };
 
 // ── Scroll nav border ──
-window.addEventListener('scroll', () => {
-  document.querySelector('.nav')?.classList.toggle('scrolled', window.scrollY > 20);
+window.addEventListener("scroll", () => {
+  document
+    .querySelector(".nav")
+    ?.classList.toggle("scrolled", window.scrollY > 20);
 });
 
 // ── Toast ──
-export function toast(msg, type = 'default') {
-  let el = document.getElementById('toast');
+export function toast(msg, type = "default") {
+  let el = document.getElementById("toast");
   if (!el) {
-    el = document.createElement('div');
-    el.id = 'toast';
-    el.className = 'toast';
+    el = document.createElement("div");
+    el.id = "toast";
+    el.className = "toast";
     document.body.appendChild(el);
   }
-  const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : '·';
+  const icon = type === "success" ? "✓" : type === "error" ? "✕" : "·";
   el.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
   el.className = `toast ${type} show`;
   clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove('show'), 3200);
+  el._t = setTimeout(() => el.classList.remove("show"), 3200);
 }
 
 // ── Confirm dialog ──
 export function confirm(title, msg) {
-  return new Promise(resolve => {
-    let ov = document.getElementById('confirm-overlay');
+  return new Promise((resolve) => {
+    let ov = document.getElementById("confirm-overlay");
     if (!ov) {
-      ov = document.createElement('div');
-      ov.id = 'confirm-overlay';
-      ov.className = 'overlay';
+      ov = document.createElement("div");
+      ov.id = "confirm-overlay";
+      ov.className = "overlay";
       ov.innerHTML = `
         <div class="dialog">
           <h3 id="confirm-title"></h3>
@@ -164,27 +197,35 @@ export function confirm(title, msg) {
         </div>`;
       document.body.appendChild(ov);
     }
-    document.getElementById('confirm-title').textContent = title;
-    document.getElementById('confirm-msg').textContent   = msg;
-    ov.classList.add('show');
-    const done = (val) => { ov.classList.remove('show'); resolve(val); };
-    document.getElementById('confirm-yes').onclick = () => done(true);
-    document.getElementById('confirm-no').onclick  = () => done(false);
+    document.getElementById("confirm-title").textContent = title;
+    document.getElementById("confirm-msg").textContent = msg;
+    ov.classList.add("show");
+    const done = (val) => {
+      ov.classList.remove("show");
+      resolve(val);
+    };
+    document.getElementById("confirm-yes").onclick = () => done(true);
+    document.getElementById("confirm-no").onclick = () => done(false);
   });
 }
 
 // ── Helpers ──
 export function slugify(str) {
-  return str.toLowerCase().trim()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
 }
 
 export function wordCount(html) {
-  return (html ?? '').replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ').trim()
-    .split(' ').filter(Boolean).length;
+  return (html ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean).length;
 }
 
 export function readTime(wc) {
@@ -194,10 +235,11 @@ export function readTime(wc) {
 // Escape untrusted, reader-supplied text (comment content, usernames) before
 // inserting it via innerHTML, so a comment containing HTML/script can't execute.
 export function escapeHtml(str) {
-  return (str ?? '').toString()
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  return (str ?? "")
+    .toString()
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }

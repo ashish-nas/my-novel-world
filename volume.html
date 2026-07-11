@@ -1,309 +1,493 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Loading... — My Novel World</title>
-<link rel="stylesheet" href="/css/style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<style>
-  /* ── Breadcrumb ── */
-  .vol-breadcrumb {
-    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
-    font-size: 0.78rem; color: var(--text3); margin-bottom: 2rem;
-  }
-  .vol-breadcrumb a { color: var(--text2); transition: color 0.2s; }
-  .vol-breadcrumb a:hover { color: var(--gold); }
-  .vol-breadcrumb .sep { color: var(--text3); }
-  .vol-breadcrumb .current { color: var(--text2); }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading... — My Novel World</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <style>
+      /* ── Breadcrumb ── */
+      .vol-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        font-size: 0.78rem;
+        color: var(--text3);
+        margin-bottom: 2rem;
+      }
+      .vol-breadcrumb a {
+        color: var(--text2);
+        transition: color 0.2s;
+      }
+      .vol-breadcrumb a:hover {
+        color: var(--gold);
+      }
+      .vol-breadcrumb .sep {
+        color: var(--text3);
+      }
+      .vol-breadcrumb .current {
+        color: var(--text2);
+      }
 
-  /* ── Volume header ── */
-  .vol-header { margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
-  .vol-eyebrow {
-    font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.3em;
-    color: var(--gold); text-transform: uppercase; margin-bottom: 0.75rem;
-  }
-  .vol-title {
-    font-family: 'Cormorant Garamond', serif; font-size: clamp(1.8rem, 4vw, 2.6rem);
-    font-weight: 300; line-height: 1.15; margin-bottom: 1rem;
-  }
-  .vol-desc { font-size: 0.92rem; color: var(--text2); line-height: 1.8; max-width: 640px; margin-bottom: 1.5rem; }
-  .vol-actions-row {
-    display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 1rem;
-  }
-  .vol-meta-row { display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; }
-  .vol-meta-item { font-size: 0.78rem; color: var(--text3); display: flex; align-items: center; gap: 0.4rem; }
-  .vol-meta-item i { color: var(--gold); }
+      /* ── Volume header ── */
+      .vol-header {
+        margin-bottom: 2.5rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .vol-eyebrow {
+        font-family: "Cinzel", serif;
+        font-size: 0.6rem;
+        letter-spacing: 0.3em;
+        color: var(--gold);
+        text-transform: uppercase;
+        margin-bottom: 0.75rem;
+      }
+      .vol-title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: clamp(1.8rem, 4vw, 2.6rem);
+        font-weight: 300;
+        line-height: 1.15;
+        margin-bottom: 1rem;
+      }
+      .vol-desc {
+        font-size: 0.92rem;
+        color: var(--text2);
+        line-height: 1.8;
+        max-width: 640px;
+        margin-bottom: 1.5rem;
+      }
+      .vol-actions-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+      .vol-meta-row {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .vol-meta-item {
+        font-size: 0.78rem;
+        color: var(--text3);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .vol-meta-item i {
+        color: var(--gold);
+      }
 
-  /* ── Chapter list ── */
-  .chapters-list { display: flex; flex-direction: column; gap: 0.75rem; }
-  .chapter-row {
-    display: flex; align-items: center; gap: 1.5rem;
-    padding: 1.25rem 1.5rem; background: var(--bg2);
-    border: 1px solid var(--border); border-radius: var(--radius-lg);
-    cursor: pointer; transition: all 0.2s;
-  }
-  .chapter-row:hover { border-color: var(--gold); }
-  .chapter-num {
-    font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; color: var(--border2);
-    min-width: 2.25rem; text-align: center; transition: color 0.2s;
-  }
-  .chapter-row:hover .chapter-num { color: var(--gold); }
-  .chapter-info { flex: 1; min-width: 0; }
-  .chapter-title-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.3rem; }
-  .chapter-title { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; }
-  .chapter-status { font-size: 0.68rem; }
-  .chapter-status:empty { display: none; }
-  .chapter-status.done { color: var(--green); display: inline-flex; align-items: center; }
-  .chapter-status.progress {
-    font-family: 'Cinzel', serif; font-size: 0.55rem; letter-spacing: 0.1em;
-    color: var(--gold); border: 1px solid var(--gold); border-radius: 2px; padding: 0.1rem 0.4rem;
-  }
-  .chapter-teaser {
-    font-size: 0.82rem; color: var(--text2); line-height: 1.6; margin-bottom: 0.4rem;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 560px;
-  }
-  .chapter-meta { font-size: 0.72rem; color: var(--text3); display: flex; gap: 1rem; }
-  .chapter-arrow { color: var(--text3); font-size: 1.2rem; transition: all 0.2s; flex-shrink: 0; }
-  .chapter-row:hover .chapter-arrow { color: var(--gold); transform: translateX(4px); }
+      /* ── Chapter list ── */
+      .chapters-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .chapter-row {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .chapter-row:hover {
+        border-color: var(--gold);
+      }
+      .chapter-num {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.6rem;
+        color: var(--border2);
+        min-width: 2.25rem;
+        text-align: center;
+        transition: color 0.2s;
+      }
+      .chapter-row:hover .chapter-num {
+        color: var(--gold);
+      }
+      .chapter-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .chapter-title-row {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 0.3rem;
+      }
+      .chapter-title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.15rem;
+      }
+      .chapter-status {
+        font-size: 0.68rem;
+      }
+      .chapter-status:empty {
+        display: none;
+      }
+      .chapter-status.done {
+        color: var(--green);
+        display: inline-flex;
+        align-items: center;
+      }
+      .chapter-status.progress {
+        font-family: "Cinzel", serif;
+        font-size: 0.55rem;
+        letter-spacing: 0.1em;
+        color: var(--gold);
+        border: 1px solid var(--gold);
+        border-radius: 2px;
+        padding: 0.1rem 0.4rem;
+      }
+      .chapter-teaser {
+        font-size: 0.82rem;
+        color: var(--text2);
+        line-height: 1.6;
+        margin-bottom: 0.4rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 560px;
+      }
+      .chapter-meta {
+        font-size: 0.72rem;
+        color: var(--text3);
+        display: flex;
+        gap: 1rem;
+      }
+      .chapter-arrow {
+        color: var(--text3);
+        font-size: 1.2rem;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+      .chapter-row:hover .chapter-arrow {
+        color: var(--gold);
+        transform: translateX(4px);
+      }
 
-  /* ── Prev / next volume nav ── */
-  .vol-nav-footer {
-    display: flex; justify-content: space-between; gap: 1rem;
-    margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);
-  }
-  .vol-nav-btn {
-    flex: 1; padding: 1rem 1.25rem; background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--radius-lg); transition: all 0.2s; max-width: 320px;
-  }
-  .vol-nav-btn:hover { border-color: var(--gold); }
-  .vol-nav-btn.next { text-align: right; margin-left: auto; }
-  .vol-nav-label {
-    font-family: 'Cinzel', serif; font-size: 0.55rem; letter-spacing: 0.2em;
-    color: var(--text3); text-transform: uppercase; margin-bottom: 0.4rem;
-  }
-  .vol-nav-title { font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--text); }
+      /* ── Prev / next volume nav ── */
+      .vol-nav-footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border);
+      }
+      .vol-nav-btn {
+        flex: 1;
+        padding: 1rem 1.25rem;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        transition: all 0.2s;
+        max-width: 320px;
+      }
+      .vol-nav-btn:hover {
+        border-color: var(--gold);
+      }
+      .vol-nav-btn.next {
+        text-align: right;
+        margin-left: auto;
+      }
+      .vol-nav-label {
+        font-family: "Cinzel", serif;
+        font-size: 0.55rem;
+        letter-spacing: 0.2em;
+        color: var(--text3);
+        text-transform: uppercase;
+        margin-bottom: 0.4rem;
+      }
+      .vol-nav-title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1rem;
+        color: var(--text);
+      }
 
-  @media (max-width: 768px) {
-    .chapter-row { padding: 1rem; gap: 1rem; }
-    .chapter-teaser { max-width: 100%; white-space: normal; }
-    .vol-nav-footer { flex-direction: column; }
-    .vol-nav-btn { max-width: none; }
-  }
-</style>
-</head>
-<body>
+      @media (max-width: 768px) {
+        .chapter-row {
+          padding: 1rem;
+          gap: 1rem;
+        }
+        .chapter-teaser {
+          max-width: 100%;
+          white-space: normal;
+        }
+        .vol-nav-footer {
+          flex-direction: column;
+        }
+        .vol-nav-btn {
+          max-width: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav" id="main-nav">
+      <span class="nav-logo" onclick="location.href = '/'">MY NOVEL WORLD</span>
+      <ul class="nav-links">
+        <li><a href="/">Library</a></li>
+        <li>
+          <a href="/updates.html"
+            >Updates<span class="nav-badge" id="updates-badge"></span
+          ></a>
+        </li>
+        <li><a href="/reading-order.html">Reading Order</a></li>
+        <li><a href="/qa.html">Q&A</a></li>
+      </ul>
+      <div id="nav-right" class="nav-right"></div>
+    </nav>
 
-<nav class="nav" id="main-nav">
-  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
-  <ul class="nav-links">
-    <li><a href="/">Library</a></li>
-    <li><a href="/updates.html">Updates</a></li>
-    <li><a href="/reading-order.html">Reading Order</a></li>
-    <li><a href="/qa.html">Q&A</a></li>
-  </ul>
-  <div id="nav-right" class="nav-right"></div>
-</nav>
-
-<div class="page">
-  <div class="container">
-
-    <div class="vol-breadcrumb" id="breadcrumb">
-      <a href="/">Library</a>
-      <span class="sep">›</span>
-      <a href="#" id="bc-book">Novel</a>
-      <span class="sep">›</span>
-      <span class="current" id="bc-volume">Volume</span>
-    </div>
-
-    <div class="vol-header">
-      <p class="vol-eyebrow" id="vol-eyebrow">Volume</p>
-      <h1 class="vol-title" id="vol-title">Loading...</h1>
-      <p class="vol-desc" id="vol-desc"></p>
-      <div class="vol-actions-row">
-        <div class="vol-meta-row">
-          <span class="vol-meta-item"><i class="ti ti-book-2"></i><span id="meta-chapters">— chapters</span></span>
-          <span class="vol-meta-item"><i class="ti ti-typography"></i><span id="meta-words">— words</span></span>
-          <span class="vol-meta-item"><i class="ti ti-clock"></i><span id="meta-time">— min read</span></span>
+    <div class="page">
+      <div class="container">
+        <div class="vol-breadcrumb" id="breadcrumb">
+          <a href="/">Library</a>
+          <span class="sep">›</span>
+          <a href="#" id="bc-book">Novel</a>
+          <span class="sep">›</span>
+          <span class="current" id="bc-volume">Volume</span>
         </div>
-        <a href="#" id="start-vol-btn" class="btn btn-primary" style="display:none">
-          <i class="ti ti-book"></i> <span id="start-vol-label">Start Reading</span>
-        </a>
+
+        <div class="vol-header">
+          <p class="vol-eyebrow" id="vol-eyebrow">Volume</p>
+          <h1 class="vol-title" id="vol-title">Loading...</h1>
+          <p class="vol-desc" id="vol-desc"></p>
+          <div class="vol-actions-row">
+            <div class="vol-meta-row">
+              <span class="vol-meta-item"
+                ><i class="ti ti-book-2"></i
+                ><span id="meta-chapters">— chapters</span></span
+              >
+              <span class="vol-meta-item"
+                ><i class="ti ti-typography"></i
+                ><span id="meta-words">— words</span></span
+              >
+              <span class="vol-meta-item"
+                ><i class="ti ti-clock"></i
+                ><span id="meta-time">— min read</span></span
+              >
+            </div>
+            <a
+              href="#"
+              id="start-vol-btn"
+              class="btn btn-primary"
+              style="display: none"
+            >
+              <i class="ti ti-book"></i>
+              <span id="start-vol-label">Start Reading</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="chapters-list" id="chapters-list">
+          <div class="empty">
+            <div class="empty-icon">📖</div>
+            <p>Loading chapters...</p>
+          </div>
+        </div>
+
+        <div class="vol-nav-footer" id="vol-nav-footer" style="display: none">
+          <a class="vol-nav-btn prev" id="nav-prev" style="display: none">
+            <div class="vol-nav-label">← Previous Volume</div>
+            <div class="vol-nav-title" id="nav-prev-title"></div>
+          </a>
+          <a class="vol-nav-btn next" id="nav-next" style="display: none">
+            <div class="vol-nav-label">Next Volume →</div>
+            <div class="vol-nav-title" id="nav-next-title"></div>
+          </a>
+        </div>
       </div>
     </div>
 
-    <div class="chapters-list" id="chapters-list">
-      <div class="empty"><div class="empty-icon">📖</div><p>Loading chapters...</p></div>
-    </div>
+    <script type="module">
+      import db from "/js/supabase.js";
+      import { initAuth, readTime } from "/js/app.js";
 
-    <div class="vol-nav-footer" id="vol-nav-footer" style="display:none">
-      <a class="vol-nav-btn prev" id="nav-prev" style="display:none">
-        <div class="vol-nav-label">← Previous Volume</div>
-        <div class="vol-nav-title" id="nav-prev-title"></div>
-      </a>
-      <a class="vol-nav-btn next" id="nav-next" style="display:none">
-        <div class="vol-nav-label">Next Volume →</div>
-        <div class="vol-nav-title" id="nav-next-title"></div>
-      </a>
-    </div>
+      const params = new URLSearchParams(location.search);
+      const volId = params.get("id");
+      if (!volId) location.href = "/";
 
-  </div>
-</div>
+      await initAuth();
+      const { currentUser } = await import("/js/app.js");
 
-<script type="module">
-import db from '/js/supabase.js';
-import { initAuth, readTime } from '/js/app.js';
+      // ── Load volume + chapters ──
+      async function loadVolume() {
+        const { data, error } = await db
+          .from("volumes")
+          .select(
+            "*, books(id, title), chapters(id, title, teaser, word_count, published, sort_order)",
+          )
+          .eq("id", volId)
+          .eq("published", true)
+          .single();
 
-const params = new URLSearchParams(location.search);
-const volId  = params.get('id');
-if (!volId) location.href = '/';
+        if (error || !data) {
+          document.getElementById("vol-title").textContent = "Volume not found";
+          document.getElementById("vol-desc").textContent =
+            "This volume may have been removed or is not yet published.";
+          document.getElementById("vol-desc").style.display = "block";
+          document.getElementById("chapters-list").innerHTML =
+            `<div class="empty"><div class="empty-icon">📖</div><p>Nothing to show here.</p></div>`;
+          return;
+        }
 
-await initAuth();
-const { currentUser } = await import('/js/app.js');
+        document.title = data.title + " — My Novel World";
 
-// ── Load volume + chapters ──
-async function loadVolume() {
-  const { data, error } = await db.from('volumes')
-    .select('*, books(id, title), chapters(id, title, teaser, word_count, published, sort_order)')
-    .eq('id', volId).eq('published', true).single();
+        // Breadcrumb
+        const bookLink = document.getElementById("bc-book");
+        if (data.books) {
+          bookLink.textContent = data.books.title;
+          bookLink.href = `/book.html?id=${data.books.id}`;
+        } else {
+          bookLink.style.display = "none";
+        }
+        document.getElementById("bc-volume").textContent = data.title;
 
-  if (error || !data) {
-    document.getElementById('vol-title').textContent = 'Volume not found';
-    document.getElementById('vol-desc').textContent  = 'This volume may have been removed or is not yet published.';
-    document.getElementById('vol-desc').style.display = 'block';
-    document.getElementById('chapters-list').innerHTML =
-      `<div class="empty"><div class="empty-icon">📖</div><p>Nothing to show here.</p></div>`;
-    return;
-  }
+        // Header
+        document.getElementById("vol-title").textContent = data.title;
+        if (data.description) {
+          document.getElementById("vol-desc").textContent = data.description;
+        } else {
+          document.getElementById("vol-desc").style.display = "none";
+        }
 
-  document.title = data.title + ' — My Novel World';
+        const chapters = (data.chapters || [])
+          .filter((c) => c.published)
+          .sort((a, b) => a.sort_order - b.sort_order);
+        const totalWords = chapters.reduce(
+          (s, c) => s + (c.word_count || 0),
+          0,
+        );
 
-  // Breadcrumb
-  const bookLink = document.getElementById('bc-book');
-  if (data.books) {
-    bookLink.textContent = data.books.title;
-    bookLink.href = `/book.html?id=${data.books.id}`;
-  } else {
-    bookLink.style.display = 'none';
-  }
-  document.getElementById('bc-volume').textContent = data.title;
+        document.getElementById("meta-chapters").textContent =
+          `${chapters.length} chapter${chapters.length !== 1 ? "s" : ""}`;
+        document.getElementById("meta-words").textContent =
+          `${totalWords.toLocaleString()} words`;
+        document.getElementById("meta-time").textContent =
+          `${readTime(totalWords)} min read`;
 
-  // Header
-  document.getElementById('vol-title').textContent = data.title;
-  if (data.description) {
-    document.getElementById('vol-desc').textContent = data.description;
-  } else {
-    document.getElementById('vol-desc').style.display = 'none';
-  }
+        renderChapters(chapters);
 
-  const chapters = (data.chapters || [])
-    .filter(c => c.published)
-    .sort((a, b) => a.sort_order - b.sort_order);
-  const totalWords = chapters.reduce((s, c) => s + (c.word_count || 0), 0);
+        const startBtn = document.getElementById("start-vol-btn");
+        if (chapters.length) {
+          startBtn.href = `/chapter.html?id=${chapters[0].id}`;
+          startBtn.style.display = "inline-flex";
+        }
 
-  document.getElementById('meta-chapters').textContent = `${chapters.length} chapter${chapters.length !== 1 ? 's' : ''}`;
-  document.getElementById('meta-words').textContent    = `${totalWords.toLocaleString()} words`;
-  document.getElementById('meta-time').textContent     = `${readTime(totalWords)} min read`;
+        if (data.books?.id) loadVolumeNav(data.books.id, data.sort_order);
+        if (currentUser && chapters.length)
+          loadProgress(chapters.map((c) => c.id));
+      }
 
-  renderChapters(chapters);
-
-  const startBtn = document.getElementById('start-vol-btn');
-  if (chapters.length) {
-    startBtn.href = `/chapter.html?id=${chapters[0].id}`;
-    startBtn.style.display = 'inline-flex';
-  }
-
-  if (data.books?.id) loadVolumeNav(data.books.id, data.sort_order);
-  if (currentUser && chapters.length) loadProgress(chapters.map(c => c.id));
-}
-
-function renderChapters(chapters) {
-  const list = document.getElementById('chapters-list');
-  if (!chapters.length) {
-    list.innerHTML = `<div class="empty"><div class="empty-icon">📖</div><p>No chapters published yet. Check back soon.</p></div>`;
-    return;
-  }
-  list.innerHTML = chapters.map((c, i) => `
+      function renderChapters(chapters) {
+        const list = document.getElementById("chapters-list");
+        if (!chapters.length) {
+          list.innerHTML = `<div class="empty"><div class="empty-icon">📖</div><p>No chapters published yet. Check back soon.</p></div>`;
+          return;
+        }
+        list.innerHTML = chapters
+          .map(
+            (c, i) => `
     <div class="chapter-row" onclick="location.href='/chapter.html?id=${c.id}'">
-      <div class="chapter-num">${String(i + 1).padStart(2, '0')}</div>
+      <div class="chapter-num">${String(i + 1).padStart(2, "0")}</div>
       <div class="chapter-info">
         <div class="chapter-title-row">
           <div class="chapter-title">${c.title}</div>
           <span class="chapter-status" id="status-${c.id}"></span>
         </div>
-        ${c.teaser ? `<div class="chapter-teaser">${c.teaser}</div>` : ''}
+        ${c.teaser ? `<div class="chapter-teaser">${c.teaser}</div>` : ""}
         <div class="chapter-meta">
           <span>${(c.word_count || 0).toLocaleString()} words</span>
           <span>${readTime(c.word_count || 0)} min read</span>
         </div>
       </div>
       <div class="chapter-arrow">→</div>
-    </div>`).join('');
-}
+    </div>`,
+          )
+          .join("");
+      }
 
-// ── Reading progress indicators (logged-in readers) ──
-async function loadProgress(chapterIds) {
-  const { data } = await db.from('reading_progress')
-    .select('chapter_id, completed, scroll_percent')
-    .eq('user_id', currentUser.id)
-    .in('chapter_id', chapterIds);
+      // ── Reading progress indicators (logged-in readers) ──
+      async function loadProgress(chapterIds) {
+        const { data } = await db
+          .from("reading_progress")
+          .select("chapter_id, completed, scroll_percent")
+          .eq("user_id", currentUser.id)
+          .in("chapter_id", chapterIds);
 
-  let nextUnread = null;
-  (data || []).forEach(p => {
-    const el = document.getElementById(`status-${p.chapter_id}`);
-    if (!el) return;
-    if (p.completed) {
-      el.innerHTML = '<i class="ti ti-circle-check"></i>';
-      el.classList.add('done');
-    } else if (p.scroll_percent > 0) {
-      el.textContent = Math.round(p.scroll_percent) + '%';
-      el.classList.add('progress');
-      nextUnread = p.chapter_id;
-    }
-  });
+        let nextUnread = null;
+        (data || []).forEach((p) => {
+          const el = document.getElementById(`status-${p.chapter_id}`);
+          if (!el) return;
+          if (p.completed) {
+            el.innerHTML = '<i class="ti ti-circle-check"></i>';
+            el.classList.add("done");
+          } else if (p.scroll_percent > 0) {
+            el.textContent = Math.round(p.scroll_percent) + "%";
+            el.classList.add("progress");
+            nextUnread = p.chapter_id;
+          }
+        });
 
-  // If they're mid-chapter, offer to resume instead of "Start Reading"
-  if (nextUnread) {
-    const startBtn = document.getElementById('start-vol-btn');
-    startBtn.href = `/chapter.html?id=${nextUnread}`;
-    document.getElementById('start-vol-label').textContent = 'Continue Reading';
-  }
-}
+        // If they're mid-chapter, offer to resume instead of "Start Reading"
+        if (nextUnread) {
+          const startBtn = document.getElementById("start-vol-btn");
+          startBtn.href = `/chapter.html?id=${nextUnread}`;
+          document.getElementById("start-vol-label").textContent =
+            "Continue Reading";
+        }
+      }
 
-// ── Prev / next volume nav ──
-async function loadVolumeNav(bookId, sortOrder) {
-  const { data } = await db.from('volumes')
-    .select('id, title, sort_order')
-    .eq('book_id', bookId).eq('published', true)
-    .order('sort_order');
+      // ── Prev / next volume nav ──
+      async function loadVolumeNav(bookId, sortOrder) {
+        const { data } = await db
+          .from("volumes")
+          .select("id, title, sort_order")
+          .eq("book_id", bookId)
+          .eq("published", true)
+          .order("sort_order");
 
-  if (!data?.length) return;
+        if (!data?.length) return;
 
-  const idx = data.findIndex(v => v.id === volId);
-  if (idx === -1) return;
+        const idx = data.findIndex((v) => v.id === volId);
+        if (idx === -1) return;
 
-  document.getElementById('vol-eyebrow').textContent = `Volume ${idx + 1}`;
+        document.getElementById("vol-eyebrow").textContent =
+          `Volume ${idx + 1}`;
 
-  const prev = idx > 0 ? data[idx - 1] : null;
-  const next = idx < data.length - 1 ? data[idx + 1] : null;
+        const prev = idx > 0 ? data[idx - 1] : null;
+        const next = idx < data.length - 1 ? data[idx + 1] : null;
 
-  if (prev) {
-    const el = document.getElementById('nav-prev');
-    el.href = `/volume.html?id=${prev.id}`;
-    document.getElementById('nav-prev-title').textContent = prev.title;
-    el.style.display = 'block';
-  }
-  if (next) {
-    const el = document.getElementById('nav-next');
-    el.href = `/volume.html?id=${next.id}`;
-    document.getElementById('nav-next-title').textContent = next.title;
-    el.style.display = 'block';
-  }
-  if (prev || next) document.getElementById('vol-nav-footer').style.display = 'flex';
-}
+        if (prev) {
+          const el = document.getElementById("nav-prev");
+          el.href = `/volume.html?id=${prev.id}`;
+          document.getElementById("nav-prev-title").textContent = prev.title;
+          el.style.display = "block";
+        }
+        if (next) {
+          const el = document.getElementById("nav-next");
+          el.href = `/volume.html?id=${next.id}`;
+          document.getElementById("nav-next-title").textContent = next.title;
+          el.style.display = "block";
+        }
+        if (prev || next)
+          document.getElementById("vol-nav-footer").style.display = "flex";
+      }
 
-loadVolume();
-</script>
-</body>
+      loadVolume();
+    </script>
+  </body>
 </html>

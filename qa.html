@@ -1,133 +1,273 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Q&amp;A — My Novel World</title>
-<link rel="stylesheet" href="/css/style.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<style>
-  .qa-header { text-align: center; margin-bottom: 3rem; max-width: 600px; margin-left: auto; margin-right: auto; }
-  .qa-header p.sub { font-size: 0.9rem; color: var(--text2); margin-top: 1rem; line-height: 1.7; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Q&amp;A — My Novel World</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <style>
+      .qa-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .qa-header p.sub {
+        font-size: 0.9rem;
+        color: var(--text2);
+        margin-top: 1rem;
+        line-height: 1.7;
+      }
 
-  .qa-section { max-width: 720px; margin: 0 auto 3.5rem; }
-  .qa-section-title {
-    font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em; color: var(--text3);
-    text-transform: uppercase; margin-bottom: 1.25rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--border);
-  }
+      .qa-section {
+        max-width: 720px;
+        margin: 0 auto 3.5rem;
+      }
+      .qa-section-title {
+        font-family: "Cinzel", serif;
+        font-size: 0.68rem;
+        letter-spacing: 0.25em;
+        color: var(--text3);
+        text-transform: uppercase;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.85rem;
+        border-bottom: 1px solid var(--border);
+      }
 
-  /* ── Answered, grouped by topic ── */
-  .qa-topic-group { margin-bottom: 2rem; }
-  .qa-topic-title { font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase; margin-bottom: 0.85rem; }
-  .qa-item { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 0.75rem; overflow: hidden; }
-  .qa-question {
-    display: flex; align-items: center; gap: 0.6rem; padding: 1.1rem 1.25rem;
-    font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; cursor: pointer; transition: color 0.2s;
-  }
-  .qa-question:hover { color: var(--gold); }
-  .qa-chevron { font-size: 1rem; color: var(--text3); flex-shrink: 0; transition: transform 0.2s; }
-  .qa-chevron.open { transform: rotate(90deg); color: var(--gold); }
-  .qa-answer { padding: 0 1.25rem 1.1rem 2.6rem; font-size: 0.9rem; color: var(--text2); line-height: 1.75; }
-  .qa-answer.collapsed { display: none; }
-  .qa-date { font-size: 0.68rem; color: var(--text3); margin-top: 0.6rem; }
+      /* ── Answered, grouped by topic ── */
+      .qa-topic-group {
+        margin-bottom: 2rem;
+      }
+      .qa-topic-title {
+        font-family: "Cinzel", serif;
+        font-size: 0.6rem;
+        letter-spacing: 0.2em;
+        color: var(--gold);
+        text-transform: uppercase;
+        margin-bottom: 0.85rem;
+      }
+      .qa-item {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        margin-bottom: 0.75rem;
+        overflow: hidden;
+      }
+      .qa-question {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 1.1rem 1.25rem;
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.05rem;
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+      .qa-question:hover {
+        color: var(--gold);
+      }
+      .qa-chevron {
+        font-size: 1rem;
+        color: var(--text3);
+        flex-shrink: 0;
+        transition: transform 0.2s;
+      }
+      .qa-chevron.open {
+        transform: rotate(90deg);
+        color: var(--gold);
+      }
+      .qa-answer {
+        padding: 0 1.25rem 1.1rem 2.6rem;
+        font-size: 0.9rem;
+        color: var(--text2);
+        line-height: 1.75;
+      }
+      .qa-answer.collapsed {
+        display: none;
+      }
+      .qa-date {
+        font-size: 0.68rem;
+        color: var(--text3);
+        margin-top: 0.6rem;
+      }
 
-  /* ── Open questions ── */
-  .qa-open-item {
-    display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: var(--bg2);
-    border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 0.6rem;
-  }
-  .qa-open-text { flex: 1; font-size: 0.9rem; color: var(--text2); line-height: 1.6; }
-  .qa-upvote-btn {
-    display: flex; flex-direction: column; align-items: center; gap: 0.15rem; flex-shrink: 0;
-    padding: 0.5rem 0.9rem; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2);
-    border-radius: var(--radius); cursor: pointer; transition: all 0.2s; font-size: 0.7rem;
-  }
-  .qa-upvote-btn:hover { border-color: var(--gold); color: var(--gold); }
-  .qa-upvote-btn.voted { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); cursor: default; }
-  .qa-upvote-btn i { font-size: 1.1rem; }
+      /* ── Open questions ── */
+      .qa-open-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        margin-bottom: 0.6rem;
+      }
+      .qa-open-text {
+        flex: 1;
+        font-size: 0.9rem;
+        color: var(--text2);
+        line-height: 1.6;
+      }
+      .qa-upvote-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.15rem;
+        flex-shrink: 0;
+        padding: 0.5rem 0.9rem;
+        border: 1px solid var(--border2);
+        background: var(--bg3);
+        color: var(--text2);
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.7rem;
+      }
+      .qa-upvote-btn:hover {
+        border-color: var(--gold);
+        color: var(--gold);
+      }
+      .qa-upvote-btn.voted {
+        border-color: var(--gold);
+        color: var(--gold);
+        background: var(--gold-dim);
+        cursor: default;
+      }
+      .qa-upvote-btn i {
+        font-size: 1.1rem;
+      }
 
-  /* ── Submit form ── */
-  .qa-submit-box { max-width: 720px; margin: 0 auto; }
-  .qa-submit-box textarea { min-height: 100px; }
-</style>
-</head>
-<body>
+      /* ── Submit form ── */
+      .qa-submit-box {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+      .qa-submit-box textarea {
+        min-height: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav" id="main-nav">
+      <span class="nav-logo" onclick="location.href = '/'">MY NOVEL WORLD</span>
+      <ul class="nav-links">
+        <li><a href="/">Library</a></li>
+        <li>
+          <a href="/updates.html"
+            >Updates<span class="nav-badge" id="updates-badge"></span
+          ></a>
+        </li>
+        <li><a href="/reading-order.html">Reading Order</a></li>
+        <li><a href="/qa.html" class="active">Q&A</a></li>
+      </ul>
+      <div id="nav-right" class="nav-right"></div>
+    </nav>
 
-<nav class="nav" id="main-nav">
-  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
-  <ul class="nav-links">
-    <li><a href="/">Library</a></li>
-    <li><a href="/updates.html">Updates</a></li>
-    <li><a href="/reading-order.html">Reading Order</a></li>
-    <li><a href="/qa.html" class="active">Q&A</a></li>
-  </ul>
-  <div id="nav-right" class="nav-right"></div>
-</nav>
+    <div class="page">
+      <div class="container">
+        <div class="qa-header fade-up">
+          <p class="eyebrow">Ask Me Anything</p>
+          <h1 class="section-title">Author Q&amp;A</h1>
+          <p class="sub">
+            Answered questions below, grouped by topic. Got something to ask?
+            Submit it at the bottom — no account needed.
+          </p>
+        </div>
 
-<div class="page">
-  <div class="container">
+        <div class="qa-section fade-up">
+          <div class="qa-section-title">Answered</div>
+          <div id="qa-answered">
+            <div class="empty">
+              <div class="empty-icon">💬</div>
+              <p>Loading...</p>
+            </div>
+          </div>
+        </div>
 
-    <div class="qa-header fade-up">
-      <p class="eyebrow">Ask Me Anything</p>
-      <h1 class="section-title">Author Q&amp;A</h1>
-      <p class="sub">Answered questions below, grouped by topic. Got something to ask? Submit it at the bottom — no account needed.</p>
-    </div>
+        <div class="qa-section fade-up">
+          <div class="qa-section-title">
+            Open Questions — Upvote to Help Prioritize
+          </div>
+          <div id="qa-open">
+            <div class="empty">
+              <div class="empty-icon">❓</div>
+              <p>Loading...</p>
+            </div>
+          </div>
+        </div>
 
-    <div class="qa-section fade-up">
-      <div class="qa-section-title">Answered</div>
-      <div id="qa-answered">
-        <div class="empty"><div class="empty-icon">💬</div><p>Loading...</p></div>
+        <div class="qa-section qa-submit-box fade-up">
+          <div class="qa-section-title">Submit a Question</div>
+          <div class="form-group">
+            <textarea
+              id="q-input"
+              class="form-input"
+              rows="4"
+              placeholder="What would you like to ask?"
+            ></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="submitQuestion()">
+            Submit Question
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="qa-section fade-up">
-      <div class="qa-section-title">Open Questions — Upvote to Help Prioritize</div>
-      <div id="qa-open">
-        <div class="empty"><div class="empty-icon">❓</div><p>Loading...</p></div>
-      </div>
-    </div>
+    <script type="module">
+      import db from "/js/supabase.js";
+      import { initAuth, escapeHtml, toast } from "/js/app.js";
 
-    <div class="qa-section qa-submit-box fade-up">
-      <div class="qa-section-title">Submit a Question</div>
-      <div class="form-group">
-        <textarea id="q-input" class="form-input" rows="4" placeholder="What would you like to ask?"></textarea>
-      </div>
-      <button class="btn btn-primary" onclick="submitQuestion()">Submit Question</button>
-    </div>
+      await initAuth();
+      const { currentUser } = await import("/js/app.js");
 
-  </div>
-</div>
+      const TOPIC_LABELS = {
+        writing: "Writing Process",
+        books: "About the Books",
+        personal: "Personal",
+        other: "Other",
+      };
+      const TOPIC_ORDER = ["writing", "books", "personal", "other"];
 
-<script type="module">
-import db from '/js/supabase.js';
-import { initAuth, escapeHtml, toast } from '/js/app.js';
+      async function loadAnswered() {
+        const { data, error } = await db
+          .from("qa_questions")
+          .select("*")
+          .eq("published", true)
+          .not("answer", "is", null)
+          .order("created_at", { ascending: false });
 
-await initAuth();
-const { currentUser } = await import('/js/app.js');
+        const el = document.getElementById("qa-answered");
+        if (error) {
+          console.error("loadAnswered failed:", error.message);
+          el.innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load answers right now.</p></div>`;
+          return;
+        }
+        if (!data?.length) {
+          el.innerHTML = `<div class="empty"><div class="empty-icon">💬</div><p>No answered questions yet — check back soon.</p></div>`;
+          return;
+        }
 
-const TOPIC_LABELS = { writing: 'Writing Process', books: 'About the Books', personal: 'Personal', other: 'Other' };
-const TOPIC_ORDER  = ['writing', 'books', 'personal', 'other'];
+        const byTopic = new Map();
+        data.forEach((q) => {
+          const t = TOPIC_ORDER.includes(q.topic) ? q.topic : "other";
+          if (!byTopic.has(t)) byTopic.set(t, []);
+          byTopic.get(t).push(q);
+        });
 
-async function loadAnswered() {
-  const { data, error } = await db.from('qa_questions')
-    .select('*').eq('published', true).not('answer', 'is', null)
-    .order('created_at', { ascending: false });
-
-  const el = document.getElementById('qa-answered');
-  if (error) { console.error('loadAnswered failed:', error.message); el.innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load answers right now.</p></div>`; return; }
-  if (!data?.length) { el.innerHTML = `<div class="empty"><div class="empty-icon">💬</div><p>No answered questions yet — check back soon.</p></div>`; return; }
-
-  const byTopic = new Map();
-  data.forEach(q => {
-    const t = TOPIC_ORDER.includes(q.topic) ? q.topic : 'other';
-    if (!byTopic.has(t)) byTopic.set(t, []);
-    byTopic.get(t).push(q);
-  });
-
-  el.innerHTML = TOPIC_ORDER.filter(t => byTopic.has(t)).map(t => `
+        el.innerHTML = TOPIC_ORDER.filter((t) => byTopic.has(t))
+          .map(
+            (t) => `
     <div class="qa-topic-group">
       <div class="qa-topic-title">${TOPIC_LABELS[t]}</div>
-      ${byTopic.get(t).map(q => `
+      ${byTopic
+        .get(t)
+        .map(
+          (q) => `
         <div class="qa-item">
           <div class="qa-question" onclick="toggleAnswer('${q.id}')">
             <i class="ti ti-chevron-right qa-chevron" id="chev-${q.id}"></i>
@@ -137,70 +277,99 @@ async function loadAnswered() {
             ${escapeHtml(q.answer)}
             <div class="qa-date">${new Date(q.created_at).toLocaleDateString()}</div>
           </div>
-        </div>`).join('')}
-    </div>`).join('');
-}
+        </div>`,
+        )
+        .join("")}
+    </div>`,
+          )
+          .join("");
+      }
 
-window.toggleAnswer = (id) => {
-  document.getElementById(`ans-${id}`).classList.toggle('collapsed');
-  document.getElementById(`chev-${id}`).classList.toggle('open');
-};
+      window.toggleAnswer = (id) => {
+        document.getElementById(`ans-${id}`).classList.toggle("collapsed");
+        document.getElementById(`chev-${id}`).classList.toggle("open");
+      };
 
-// ── Open (unanswered) questions, with lightweight per-browser upvote dedup ──
-const voted = new Set(JSON.parse(localStorage.getItem('mnw_qa_voted') || '[]'));
+      // ── Open (unanswered) questions, with lightweight per-browser upvote dedup ──
+      const voted = new Set(
+        JSON.parse(localStorage.getItem("mnw_qa_voted") || "[]"),
+      );
 
-async function loadOpenQuestions() {
-  const { data, error } = await db.from('qa_questions')
-    .select('id, question, upvotes').is('answer', null)
-    .order('upvotes', { ascending: false }).limit(30);
+      async function loadOpenQuestions() {
+        const { data, error } = await db
+          .from("qa_questions")
+          .select("id, question, upvotes")
+          .is("answer", null)
+          .order("upvotes", { ascending: false })
+          .limit(30);
 
-  const el = document.getElementById('qa-open');
-  if (error) { console.error('loadOpenQuestions failed:', error.message); el.innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load open questions right now.</p></div>`; return; }
-  if (!data?.length) { el.innerHTML = `<div class="empty"><div class="empty-icon">❓</div><p>No open questions right now — be the first to ask below.</p></div>`; return; }
+        const el = document.getElementById("qa-open");
+        if (error) {
+          console.error("loadOpenQuestions failed:", error.message);
+          el.innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load open questions right now.</p></div>`;
+          return;
+        }
+        if (!data?.length) {
+          el.innerHTML = `<div class="empty"><div class="empty-icon">❓</div><p>No open questions right now — be the first to ask below.</p></div>`;
+          return;
+        }
 
-  el.innerHTML = data.map(q => {
-    const hasVoted = voted.has(q.id);
-    return `
+        el.innerHTML = data
+          .map((q) => {
+            const hasVoted = voted.has(q.id);
+            return `
     <div class="qa-open-item">
       <div class="qa-open-text">${escapeHtml(q.question)}</div>
-      <button class="qa-upvote-btn ${hasVoted ? 'voted' : ''}" onclick="upvote('${q.id}', this)" ${hasVoted ? 'disabled' : ''}>
+      <button class="qa-upvote-btn ${hasVoted ? "voted" : ""}" onclick="upvote('${q.id}', this)" ${hasVoted ? "disabled" : ""}>
         <i class="ti ti-arrow-big-up-lines"></i>
         <span class="upvote-count">${q.upvotes ?? 0}</span>
       </button>
     </div>`;
-  }).join('');
-}
+          })
+          .join("");
+      }
 
-window.upvote = async (id, btn) => {
-  if (voted.has(id)) return;
-  const { error } = await db.rpc('increment_qa_upvote', { question_id: id });
-  if (error) { toast('Error: ' + error.message, 'error'); return; }
+      window.upvote = async (id, btn) => {
+        if (voted.has(id)) return;
+        const { error } = await db.rpc("increment_qa_upvote", {
+          question_id: id,
+        });
+        if (error) {
+          toast("Error: " + error.message, "error");
+          return;
+        }
 
-  voted.add(id);
-  localStorage.setItem('mnw_qa_voted', JSON.stringify([...voted]));
-  btn.classList.add('voted');
-  btn.disabled = true;
-  const countEl = btn.querySelector('.upvote-count');
-  countEl.textContent = (parseInt(countEl.textContent) || 0) + 1;
-};
+        voted.add(id);
+        localStorage.setItem("mnw_qa_voted", JSON.stringify([...voted]));
+        btn.classList.add("voted");
+        btn.disabled = true;
+        const countEl = btn.querySelector(".upvote-count");
+        countEl.textContent = (parseInt(countEl.textContent) || 0) + 1;
+      };
 
-window.submitQuestion = async () => {
-  const text = document.getElementById('q-input').value.trim();
-  if (!text) { toast('Please write a question first', 'error'); return; }
+      window.submitQuestion = async () => {
+        const text = document.getElementById("q-input").value.trim();
+        if (!text) {
+          toast("Please write a question first", "error");
+          return;
+        }
 
-  const { error } = await db.from('qa_questions').insert({
-    question: text,
-    user_id: currentUser?.id ?? null,
-  });
-  if (error) { toast('Error: ' + error.message, 'error'); return; }
+        const { error } = await db.from("qa_questions").insert({
+          question: text,
+          user_id: currentUser?.id ?? null,
+        });
+        if (error) {
+          toast("Error: " + error.message, "error");
+          return;
+        }
 
-  document.getElementById('q-input').value = '';
-  toast('Question submitted — thanks!', 'success');
-  loadOpenQuestions();
-};
+        document.getElementById("q-input").value = "";
+        toast("Question submitted — thanks!", "success");
+        loadOpenQuestions();
+      };
 
-loadAnswered();
-loadOpenQuestions();
-</script>
-</body>
+      loadAnswered();
+      loadOpenQuestions();
+    </script>
+  </body>
 </html>
