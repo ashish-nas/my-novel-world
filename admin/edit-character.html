@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script>
+      document.documentElement.classList.add("auth-pending");
+    </script>
+    <style>
+      html {
+        background: #0a0a0b;
+      }
+      .auth-pending body {
+        visibility: hidden;
+      }
+    </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Characters — Admin</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <style>
+      .char-thumb {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1rem;
+        color: var(--text2);
+        overflow: hidden;
+      }
+      .char-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <span class="nav-logo" onclick="location.href = '/'">MY NOVEL WORLD</span>
+      <div id="nav-right" class="nav-right"></div>
+    </nav>
+
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Content</div>
+          <a href="/admin/" class="sidebar-link"
+            ><i class="ti ti-layout-dashboard"></i>Dashboard</a
+          >
+          <a href="/admin/books.html" class="sidebar-link active"
+            ><i class="ti ti-books"></i>Novels</a
+          >
+          <a href="/admin/reading-order.html" class="sidebar-link"
+            ><i class="ti ti-list-numbers"></i>Reading Order</a
+          >
+          <a href="/admin/posts.html" class="sidebar-link"
+            ><i class="ti ti-speakerphone"></i>Updates</a
+          >
+          <a href="/admin/countdown.html" class="sidebar-link"
+            ><i class="ti ti-hourglass"></i>Countdown</a
+          >
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Community</div>
+          <a href="/admin/comments.html" class="sidebar-link"
+            ><i class="ti ti-message-dots"></i>Comments</a
+          >
+          <a href="/admin/qa.html" class="sidebar-link"
+            ><i class="ti ti-question-mark"></i>Q&A</a
+          >
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Insights</div>
+          <a href="/admin/analytics.html" class="sidebar-link"
+            ><i class="ti ti-chart-line"></i>Analytics</a
+          >
+          <a href="/admin/writing.html" class="sidebar-link"
+            ><i class="ti ti-pencil"></i>Writing Tracker</a
+          >
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Site</div>
+          <a href="/" class="sidebar-link"
+            ><i class="ti ti-arrow-left"></i>View Site</a
+          >
+        </div>
+      </aside>
+
+      <main class="admin-main fade-up">
+        <div class="admin-breadcrumb">
+          <a href="/admin/books.html">Novels</a>
+          <span class="sep">›</span>
+          <span id="book-name">Loading...</span>
+        </div>
+
+        <div class="admin-header">
+          <div>
+            <h1>Characters</h1>
+            <p>Manage the cast for this novel.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openCharModal()">
+            <i class="ti ti-plus"></i> New Character
+          </button>
+        </div>
+
+        <div class="card" style="overflow: hidden">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Spoiler</th>
+                <th>First Appears</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="chars-body">
+              <tr>
+                <td colspan="7">
+                  <div class="empty">
+                    <div class="empty-icon">👤</div>
+                    <p>Loading characters...</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <!-- ADD/EDIT CHARACTER MODAL -->
+    <div class="overlay" id="char-modal">
+      <div class="dialog" style="max-width: 520px; text-align: left">
+        <h3 id="modal-title">New Character</h3>
+        <div style="margin-top: 1.25rem">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Name</label>
+              <input
+                id="c-name"
+                class="form-input"
+                placeholder="e.g. Kael Ashworth"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Role</label>
+              <select id="c-role" class="form-input">
+                <option value="protagonist">Protagonist</option>
+                <option value="antagonist">Antagonist</option>
+                <option value="supporting">Supporting</option>
+                <option value="minor">Minor</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea
+              id="c-desc"
+              class="form-input"
+              rows="3"
+              placeholder="A short, spoiler-free bio..."
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Portrait Image URL</label>
+            <input
+              id="c-portrait"
+              class="form-input"
+              placeholder="https://res.cloudinary.com/..."
+            />
+            <div class="form-hint">
+              Upload to Cloudinary and paste the URL here — leave blank to show
+              initials
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">First Appearance Chapter</label>
+            <select id="c-first-chapter" class="form-input">
+              <option value="">— None set —</option>
+            </select>
+          </div>
+          <div class="toggle-wrap mt-2">
+            <label class="toggle"
+              ><input type="checkbox" id="c-spoiler" /><span
+                class="toggle-slider"
+              ></span
+            ></label>
+            <span class="toggle-label"
+              >Spoiler — hide until reader reaches the chapter above</span
+            >
+          </div>
+          <div class="toggle-wrap mt-2">
+            <label class="toggle"
+              ><input type="checkbox" id="c-published" /><span
+                class="toggle-slider"
+              ></span
+            ></label>
+            <span class="toggle-label">Published — visible to readers</span>
+          </div>
+        </div>
+        <div class="dialog-btns mt-3">
+          <button class="btn btn-primary" onclick="saveCharacter()">
+            Save Character
+          </button>
+          <button class="btn" onclick="closeCharModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import db from "../js/supabase.js";
+      import { requireAdmin, toast, confirm, escapeHtml } from "../js/app.js";
+
+      if (!(await requireAdmin())) throw new Error("Not admin");
+
+      const params = new URLSearchParams(location.search);
+      const bookId = params.get("book");
+      if (!bookId) {
+        location.href = "/admin/books.html";
+      }
+
+      const ROLE_LABEL = {
+        protagonist: "Protagonist",
+        antagonist: "Antagonist",
+        supporting: "Supporting",
+        minor: "Minor",
+      };
+      const ROLE_BADGE = {
+        protagonist: "badge-gold",
+        antagonist: "badge-red",
+        supporting: "badge-blue",
+        minor: "",
+      };
+      const ROLE_ORDER = {
+        protagonist: 0,
+        antagonist: 1,
+        supporting: 2,
+        minor: 3,
+      };
+
+      let editId = null;
+      let charactersList = []; // last-loaded rows, so delete/edit can look up by id without re-embedding free text into onclick
+
+      // ── Load book name for the breadcrumb ──
+      async function loadBook() {
+        const { data } = await db
+          .from("books")
+          .select("title")
+          .eq("id", bookId)
+          .single();
+        if (!data) {
+          location.href = "/admin/books.html";
+          return;
+        }
+        document.getElementById("book-name").textContent = data.title;
+        document.title = data.title + " Characters — Admin";
+      }
+
+      // ── Populate the First Appearance Chapter dropdown, grouped by volume ──
+      async function loadChapterOptions() {
+        const { data } = await db
+          .from("volumes")
+          .select("title, sort_order, chapters(id, title, sort_order)")
+          .eq("book_id", bookId)
+          .order("sort_order");
+
+        let html = '<option value="">— None set —</option>';
+        (data ?? []).forEach((v) => {
+          const chapters = (v.chapters ?? []).sort(
+            (a, b) => a.sort_order - b.sort_order,
+          );
+          if (!chapters.length) return;
+          html += `<optgroup label="${escapeHtml(v.title)}">`;
+          chapters.forEach((c) => {
+            html += `<option value="${c.id}">${escapeHtml(c.title)}</option>`;
+          });
+          html += `</optgroup>`;
+        });
+        document.getElementById("c-first-chapter").innerHTML = html;
+      }
+
+      async function loadCharacters() {
+        const { data, error } = await db
+          .from("characters")
+          .select("*, chapters(title)")
+          .eq("book_id", bookId);
+
+        const body = document.getElementById("chars-body");
+        if (error) {
+          body.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load characters: ${escapeHtml(error.message)}</p></div></td></tr>`;
+          return;
+        }
+
+        charactersList = (data ?? []).sort(
+          (a, b) =>
+            (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9) ||
+            a.name.localeCompare(b.name),
+        );
+
+        if (!charactersList.length) {
+          body.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">👤</div><p>No characters yet. Click <strong>New Character</strong> to add one.</p></div></td></tr>`;
+          return;
+        }
+
+        body.innerHTML = charactersList
+          .map(
+            (c) => `
+    <tr>
+      <td><div class="char-thumb">${c.portrait_url ? `<img src="${c.portrait_url}">` : escapeHtml((c.name || "?").charAt(0))}</div></td>
+      <td class="td-title">${escapeHtml(c.name)}</td>
+      <td><span class="badge ${ROLE_BADGE[c.role] ?? ""}">${escapeHtml(ROLE_LABEL[c.role] ?? c.role ?? "")}</span></td>
+      <td>${c.spoiler ? '<span class="badge badge-gold">Spoiler</span>' : '<span class="text-muted text-sm">—</span>'}</td>
+      <td class="text-sm">${c.chapters?.title ? escapeHtml(c.chapters.title) : '<span class="text-muted">Not set</span>'}</td>
+      <td><span class="badge ${c.published ? "badge-green" : "badge-red"}">${c.published ? "Live" : "Draft"}</span></td>
+      <td class="td-actions">
+        <button class="btn btn-sm" onclick="editChar('${c.id}')"><i class="ti ti-pencil"></i></button>
+        <button class="btn btn-sm btn-danger" onclick="deleteChar('${c.id}')"><i class="ti ti-trash"></i></button>
+      </td>
+    </tr>`,
+          )
+          .join("");
+      }
+
+      window.openCharModal = () => {
+        editId = null;
+        document.getElementById("modal-title").textContent = "New Character";
+        document.getElementById("c-name").value = "";
+        document.getElementById("c-role").value = "supporting";
+        document.getElementById("c-desc").value = "";
+        document.getElementById("c-portrait").value = "";
+        document.getElementById("c-first-chapter").value = "";
+        document.getElementById("c-spoiler").checked = false;
+        document.getElementById("c-published").checked = true;
+        document.getElementById("char-modal").classList.add("show");
+      };
+
+      // Looks the character up by id from the last-loaded list rather than
+      // taking the row data through the onclick attribute, so names/bios with
+      // quotes in them can't break the inline handler.
+      window.editChar = (id) => {
+        const c = charactersList.find((ch) => ch.id === id);
+        if (!c) return;
+        editId = c.id;
+        document.getElementById("modal-title").textContent = "Edit Character";
+        document.getElementById("c-name").value = c.name;
+        document.getElementById("c-role").value = c.role ?? "supporting";
+        document.getElementById("c-desc").value = c.description ?? "";
+        document.getElementById("c-portrait").value = c.portrait_url ?? "";
+        document.getElementById("c-first-chapter").value =
+          c.first_chapter_id ?? "";
+        document.getElementById("c-spoiler").checked = !!c.spoiler;
+        document.getElementById("c-published").checked = c.published !== false;
+        document.getElementById("char-modal").classList.add("show");
+      };
+
+      window.closeCharModal = () =>
+        document.getElementById("char-modal").classList.remove("show");
+
+      window.saveCharacter = async () => {
+        const name = document.getElementById("c-name").value.trim();
+        if (!name) {
+          toast("Please enter a name", "error");
+          return;
+        }
+
+        const spoiler = document.getElementById("c-spoiler").checked;
+        const firstChapterId =
+          document.getElementById("c-first-chapter").value || null;
+        if (spoiler && !firstChapterId) {
+          toast(
+            "Spoiler characters need a First Appearance Chapter set, or they'll never show to readers",
+            "error",
+          );
+          return;
+        }
+
+        const payload = {
+          book_id: bookId,
+          name,
+          role: document.getElementById("c-role").value,
+          description: document.getElementById("c-desc").value.trim(),
+          portrait_url:
+            document.getElementById("c-portrait").value.trim() || null,
+          first_chapter_id: firstChapterId,
+          spoiler,
+          published: document.getElementById("c-published").checked,
+        };
+
+        const { error } = editId
+          ? await db.from("characters").update(payload).eq("id", editId)
+          : await db.from("characters").insert(payload);
+
+        if (error) {
+          toast("Error: " + error.message, "error");
+          return;
+        }
+        toast(editId ? "Character updated!" : "Character created!", "success");
+        closeCharModal();
+        loadCharacters();
+      };
+
+      window.deleteChar = async (id) => {
+        const c = charactersList.find((ch) => ch.id === id);
+        const ok = await confirm(
+          "Delete character?",
+          `"${c?.name ?? "This character"}" will be permanently deleted.`,
+        );
+        if (!ok) return;
+        const { error } = await db.from("characters").delete().eq("id", id);
+        if (error) {
+          toast("Error: " + error.message, "error");
+          return;
+        }
+        toast("Character deleted");
+        loadCharacters();
+      };
+
+      await loadBook();
+      await loadChapterOptions();
+      loadCharacters();
+    </script>
+  </body>
+</html>

@@ -306,6 +306,17 @@
         border-radius: var(--radius-lg);
         padding: 1rem;
         text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s;
+      }
+      .char-card:hover {
+        border-color: var(--gold);
+      }
+      .char-desc-preview {
+        font-size: 0.7rem;
+        color: var(--text3);
+        line-height: 1.5;
+        margin-top: 0.4rem;
       }
       .char-portrait {
         width: 64px;
@@ -331,6 +342,57 @@
         font-family: "Cormorant Garamond", serif;
         font-size: 1.05rem;
         margin-bottom: 0.3rem;
+      }
+
+      /* ── Character detail modal ── */
+      .char-dialog {
+        position: relative;
+      }
+      .char-modal-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        color: var(--text3);
+        font-size: 1.4rem;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0.25rem;
+      }
+      .char-modal-close:hover {
+        color: var(--text);
+      }
+      .char-modal-portrait {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        margin: 0 auto 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Cormorant Garamond", serif;
+        font-size: 2rem;
+        color: var(--text2);
+        overflow: hidden;
+      }
+      .char-modal-portrait img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      #char-modal-role {
+        margin-top: 0.5rem;
+        display: inline-block;
+      }
+      #char-modal-desc {
+        font-size: 0.88rem;
+        color: var(--text2);
+        line-height: 1.7;
+        text-align: left;
+        margin-top: 1rem;
       }
 
       /* ── Reviews list ── */
@@ -572,9 +634,24 @@
       </div>
     </div>
 
+    <!-- CHARACTER DETAIL MODAL -->
+    <div class="overlay" id="char-modal">
+      <div class="dialog char-dialog" style="max-width: 440px">
+        <button class="char-modal-close" onclick="closeCharModal()">
+          &times;
+        </button>
+        <div class="char-modal-portrait" id="char-modal-portrait"></div>
+        <div style="text-align: center">
+          <h3 id="char-modal-name"></h3>
+          <span class="badge" id="char-modal-role"></span>
+        </div>
+        <p id="char-modal-desc"></p>
+      </div>
+    </div>
+
     <script type="module">
       import db from "/js/supabase.js";
-      import { initAuth, toast } from "/js/app.js";
+      import { initAuth, toast, escapeHtml } from "/js/app.js";
 
       const params = new URLSearchParams(location.search);
       const bookId = params.get("id");
@@ -723,26 +800,62 @@
       };
 
       // ── Characters ──
+      const ROLE_BADGE = {
+        protagonist: "badge-gold",
+        antagonist: "badge-red",
+        supporting: "badge-blue",
+        minor: "",
+      };
+      let characters = [];
+
+      function truncate(str, n) {
+        return str.length > n ? str.slice(0, n - 1) + "…" : str;
+      }
+
       async function loadCharacters() {
-        const { data } = await db
-          .from("characters")
-          .select("*")
-          .eq("book_id", bookId);
+        const { data, error } = await db.rpc("get_visible_characters", {
+          p_book_id: bookId,
+        });
+        if (error) {
+          console.error("get_visible_characters failed:", error.message);
+          return;
+        }
+        characters = data ?? [];
+
         const grid = document.getElementById("characters-grid");
-        if (!data?.length) return; // keep default empty state
-        grid.innerHTML = data
+        if (!characters.length) return; // keep default empty state
+        grid.innerHTML = characters
           .map(
             (c) => `
-    <div class="char-card">
+    <div class="char-card" onclick="openCharModal('${c.id}')">
       <div class="char-portrait">
-        ${c.portrait_url ? `<img src="${c.portrait_url}">` : c.name.charAt(0)}
+        ${c.portrait_url ? `<img src="${c.portrait_url}">` : escapeHtml(c.name.charAt(0))}
       </div>
-      <div class="char-name">${c.name}</div>
-      <span class="badge ${c.role === "protagonist" ? "badge-gold" : c.role === "antagonist" ? "badge-red" : ""}">${c.role}</span>
+      <div class="char-name">${escapeHtml(c.name)}</div>
+      <span class="badge ${ROLE_BADGE[c.role] ?? ""}">${escapeHtml(c.role ?? "")}</span>
+      ${c.description ? `<div class="char-desc-preview">${escapeHtml(truncate(c.description, 70))}</div>` : ""}
     </div>`,
           )
           .join("");
       }
+
+      window.openCharModal = (id) => {
+        const c = characters.find((ch) => ch.id === id);
+        if (!c) return;
+        document.getElementById("char-modal-portrait").innerHTML =
+          c.portrait_url
+            ? `<img src="${c.portrait_url}">`
+            : escapeHtml(c.name.charAt(0));
+        document.getElementById("char-modal-name").textContent = c.name;
+        document.getElementById("char-modal-role").textContent = c.role;
+        document.getElementById("char-modal-role").className =
+          `badge ${ROLE_BADGE[c.role] ?? ""}`;
+        document.getElementById("char-modal-desc").textContent =
+          c.description || "No description yet.";
+        document.getElementById("char-modal").classList.add("show");
+      };
+      window.closeCharModal = () =>
+        document.getElementById("char-modal").classList.remove("show");
 
       // ── Reviews ──
       async function loadReviews() {

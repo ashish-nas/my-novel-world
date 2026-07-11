@@ -1,242 +1,353 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<script>document.documentElement.classList.add('auth-pending');</script>
-<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Novels — Admin</title>
-<link rel="stylesheet" href="../css/style.css">
-<link rel="stylesheet" href="../css/admin.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-</head>
-<body>
-<nav class="nav">
-  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
-  <div id="nav-right" class="nav-right"></div>
-</nav>
+  <head>
+    <script>
+      document.documentElement.classList.add("auth-pending");
+    </script>
+    <style>
+      html {
+        background: #0a0a0b;
+      }
+      .auth-pending body {
+        visibility: hidden;
+      }
+    </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Novels — Admin</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+  </head>
+  <body>
+    <nav class="nav">
+      <span class="nav-logo" onclick="location.href = '/'">MY NOVEL WORLD</span>
+      <div id="nav-right" class="nav-right"></div>
+    </nav>
 
-<div class="admin-layout">
-  <aside class="admin-sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-label">Content</div>
-      <a href="/admin/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
-      <a href="/admin/books.html" class="sidebar-link active"><i class="ti ti-books"></i>Novels</a>
-      <a href="/admin/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>Reading Order</a>
-      <a href="/admin/posts.html" class="sidebar-link"><i class="ti ti-speakerphone"></i>Updates</a>
-      <a href="/admin/countdown.html" class="sidebar-link"><i class="ti ti-hourglass"></i>Countdown</a>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Community</div>
-      <a href="/admin/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments</a>
-      <a href="/admin/qa.html" class="sidebar-link"><i class="ti ti-question-mark"></i>Q&A</a>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Insights</div>
-      <a href="/admin/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
-      <a href="/admin/writing.html" class="sidebar-link"><i class="ti ti-pencil"></i>Writing Tracker</a>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Site</div>
-      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
-    </div>
-  </aside>
-
-  <main class="admin-main fade-up">
-    <div class="admin-header">
-      <div>
-        <h1>Novels</h1>
-        <p>Manage all your books, volumes, and chapters.</p>
-      </div>
-      <button class="btn btn-primary" onclick="openBookModal()"><i class="ti ti-plus"></i> New Novel</button>
-    </div>
-
-    <div class="card" style="overflow:hidden">
-      <table class="admin-table">
-        <thead><tr>
-          <th>Cover</th><th>Title</th><th>Genre</th>
-          <th>Volumes</th><th>Chapters</th><th>Status</th><th></th>
-        </tr></thead>
-        <tbody id="books-body">
-          <tr><td colspan="7"><div class="empty"><div class="empty-icon">📚</div><p>Loading novels...</p></div></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </main>
-</div>
-
-<!-- ADD/EDIT BOOK MODAL -->
-<div class="overlay" id="book-modal">
-  <div class="dialog" style="max-width:560px;text-align:left">
-    <h3 id="modal-title">New Novel</h3>
-    <div style="margin-top:1.25rem">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Title</label>
-          <input id="b-title" class="form-input" placeholder="e.g. Shadows of Aether">
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Content</div>
+          <a href="/admin/" class="sidebar-link"
+            ><i class="ti ti-layout-dashboard"></i>Dashboard</a
+          >
+          <a href="/admin/books.html" class="sidebar-link active"
+            ><i class="ti ti-books"></i>Novels</a
+          >
+          <a href="/admin/reading-order.html" class="sidebar-link"
+            ><i class="ti ti-list-numbers"></i>Reading Order</a
+          >
+          <a href="/admin/posts.html" class="sidebar-link"
+            ><i class="ti ti-speakerphone"></i>Updates</a
+          >
+          <a href="/admin/countdown.html" class="sidebar-link"
+            ><i class="ti ti-hourglass"></i>Countdown</a
+          >
         </div>
-        <div class="form-group">
-          <label class="form-label">Genre</label>
-          <select id="b-genre" class="form-input">
-            <option value="Fantasy">Fantasy</option>
-            <option value="Romance">Romance</option>
-            <option value="Thriller">Thriller</option>
-            <option value="Mystery">Mystery</option>
-            <option value="Sci-Fi">Sci-Fi</option>
-            <option value="Drama">Drama</option>
-            <option value="Horror">Horror</option>
-            <option value="Adventure">Adventure</option>
-            <option value="Other">Other</option>
-          </select>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Community</div>
+          <a href="/admin/comments.html" class="sidebar-link"
+            ><i class="ti ti-message-dots"></i>Comments</a
+          >
+          <a href="/admin/qa.html" class="sidebar-link"
+            ><i class="ti ti-question-mark"></i>Q&A</a
+          >
         </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Description</label>
-        <textarea id="b-desc" class="form-input" rows="3" placeholder="A short blurb that appears on the book card..."></textarea>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Cover Image URL</label>
-          <input id="b-cover" class="form-input" placeholder="https://res.cloudinary.com/...">
-          <div class="form-hint">Upload to Cloudinary and paste the URL here</div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Insights</div>
+          <a href="/admin/analytics.html" class="sidebar-link"
+            ><i class="ti ti-chart-line"></i>Analytics</a
+          >
+          <a href="/admin/writing.html" class="sidebar-link"
+            ><i class="ti ti-pencil"></i>Writing Tracker</a
+          >
         </div>
-        <div class="form-group">
-          <label class="form-label">Cover Symbol</label>
-          <input id="b-symbol" class="form-input" placeholder="✦" maxlength="4">
-          <div class="form-hint">An emoji shown if no cover image</div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Site</div>
+          <a href="/" class="sidebar-link"
+            ><i class="ti ti-arrow-left"></i>View Site</a
+          >
         </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Cover Background Color</label>
-        <div class="flex-center gap-1">
-          <input id="b-color" type="color" value="#111114" style="width:44px;height:36px;border:1px solid var(--border2);border-radius:var(--radius);background:none;cursor:pointer;padding:2px">
-          <input id="b-color-hex" class="form-input" placeholder="#111114" style="flex:1">
+      </aside>
+
+      <main class="admin-main fade-up">
+        <div class="admin-header">
+          <div>
+            <h1>Novels</h1>
+            <p>Manage all your books, volumes, and chapters.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openBookModal()">
+            <i class="ti ti-plus"></i> New Novel
+          </button>
         </div>
-      </div>
-      <div class="toggle-wrap mt-2">
-        <label class="toggle"><input type="checkbox" id="b-published"><span class="toggle-slider"></span></label>
-        <span class="toggle-label">Published — visible to readers</span>
+
+        <div class="card" style="overflow: hidden">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Cover</th>
+                <th>Title</th>
+                <th>Genre</th>
+                <th>Volumes</th>
+                <th>Chapters</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="books-body">
+              <tr>
+                <td colspan="7">
+                  <div class="empty">
+                    <div class="empty-icon">📚</div>
+                    <p>Loading novels...</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <!-- ADD/EDIT BOOK MODAL -->
+    <div class="overlay" id="book-modal">
+      <div class="dialog" style="max-width: 560px; text-align: left">
+        <h3 id="modal-title">New Novel</h3>
+        <div style="margin-top: 1.25rem">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Title</label>
+              <input
+                id="b-title"
+                class="form-input"
+                placeholder="e.g. Shadows of Aether"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Genre</label>
+              <select id="b-genre" class="form-input">
+                <option value="Fantasy">Fantasy</option>
+                <option value="Romance">Romance</option>
+                <option value="Thriller">Thriller</option>
+                <option value="Mystery">Mystery</option>
+                <option value="Sci-Fi">Sci-Fi</option>
+                <option value="Drama">Drama</option>
+                <option value="Horror">Horror</option>
+                <option value="Adventure">Adventure</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea
+              id="b-desc"
+              class="form-input"
+              rows="3"
+              placeholder="A short blurb that appears on the book card..."
+            ></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Cover Image URL</label>
+              <input
+                id="b-cover"
+                class="form-input"
+                placeholder="https://res.cloudinary.com/..."
+              />
+              <div class="form-hint">
+                Upload to Cloudinary and paste the URL here
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cover Symbol</label>
+              <input
+                id="b-symbol"
+                class="form-input"
+                placeholder="✦"
+                maxlength="4"
+              />
+              <div class="form-hint">An emoji shown if no cover image</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cover Background Color</label>
+            <div class="flex-center gap-1">
+              <input
+                id="b-color"
+                type="color"
+                value="#111114"
+                style="
+                  width: 44px;
+                  height: 36px;
+                  border: 1px solid var(--border2);
+                  border-radius: var(--radius);
+                  background: none;
+                  cursor: pointer;
+                  padding: 2px;
+                "
+              />
+              <input
+                id="b-color-hex"
+                class="form-input"
+                placeholder="#111114"
+                style="flex: 1"
+              />
+            </div>
+          </div>
+          <div class="toggle-wrap mt-2">
+            <label class="toggle"
+              ><input type="checkbox" id="b-published" /><span
+                class="toggle-slider"
+              ></span
+            ></label>
+            <span class="toggle-label">Published — visible to readers</span>
+          </div>
+        </div>
+        <div class="dialog-btns mt-3">
+          <button class="btn btn-primary" onclick="saveBook()">
+            Save Novel
+          </button>
+          <button class="btn" onclick="closeBookModal()">Cancel</button>
+        </div>
       </div>
     </div>
-    <div class="dialog-btns mt-3">
-      <button class="btn btn-primary" onclick="saveBook()">Save Novel</button>
-      <button class="btn" onclick="closeBookModal()">Cancel</button>
-    </div>
-  </div>
-</div>
 
-<script type="module">
-import db from '../js/supabase.js';
-import { requireAdmin, toast, confirm, slugify } from '../js/app.js';
+    <script type="module">
+      import db from "../js/supabase.js";
+      import { requireAdmin, toast, confirm, slugify } from "../js/app.js";
 
-if (!await requireAdmin()) throw new Error('Not admin');
+      if (!(await requireAdmin())) throw new Error("Not admin");
 
-let editId = null;
+      let editId = null;
 
-// Color sync
-document.getElementById('b-color').addEventListener('input', e => {
-  document.getElementById('b-color-hex').value = e.target.value;
-});
-document.getElementById('b-color-hex').addEventListener('input', e => {
-  if (/^#[0-9a-f]{6}$/i.test(e.target.value))
-    document.getElementById('b-color').value = e.target.value;
-});
+      // Color sync
+      document.getElementById("b-color").addEventListener("input", (e) => {
+        document.getElementById("b-color-hex").value = e.target.value;
+      });
+      document.getElementById("b-color-hex").addEventListener("input", (e) => {
+        if (/^#[0-9a-f]{6}$/i.test(e.target.value))
+          document.getElementById("b-color").value = e.target.value;
+      });
 
-async function loadBooks() {
-  const { data } = await db.from('books')
-    .select('*, volumes(id, chapters(id))')
-    .order('sort_order');
+      async function loadBooks() {
+        const { data } = await db
+          .from("books")
+          .select("*, volumes(id, chapters(id))")
+          .order("sort_order");
 
-  const body = document.getElementById('books-body');
-  if (!data?.length) {
-    body.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📚</div><p>No novels yet. Click <strong>New Novel</strong> to get started.</p></div></td></tr>`;
-    return;
-  }
-  body.innerHTML = data.map(b => {
-    const volCount = b.volumes?.length ?? 0;
-    const chCount  = b.volumes?.reduce((s,v) => s + (v.chapters?.length ?? 0), 0) ?? 0;
-    return `<tr>
+        const body = document.getElementById("books-body");
+        if (!data?.length) {
+          body.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📚</div><p>No novels yet. Click <strong>New Novel</strong> to get started.</p></div></td></tr>`;
+          return;
+        }
+        body.innerHTML = data
+          .map((b) => {
+            const volCount = b.volumes?.length ?? 0;
+            const chCount =
+              b.volumes?.reduce((s, v) => s + (v.chapters?.length ?? 0), 0) ??
+              0;
+            return `<tr>
       <td>
-        <div style="width:36px;height:54px;background:${b.color||'#111114'};border:1px solid var(--border);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:1.1rem">
-          ${b.cover_url ? `<img src="${b.cover_url}" style="width:100%;height:100%;object-fit:cover;border-radius:2px">` : (b.symbol||'✦')}
+        <div style="width:36px;height:54px;background:${b.color || "#111114"};border:1px solid var(--border);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:1.1rem">
+          ${b.cover_url ? `<img src="${b.cover_url}" style="width:100%;height:100%;object-fit:cover;border-radius:2px">` : b.symbol || "✦"}
         </div>
       </td>
       <td class="td-title">${b.title}</td>
       <td><span class="badge">${b.genre}</span></td>
       <td>${volCount}</td>
       <td>${chCount}</td>
-      <td><span class="badge ${b.published?'badge-green':'badge-red'}">${b.published?'Live':'Draft'}</span></td>
+      <td><span class="badge ${b.published ? "badge-green" : "badge-red"}">${b.published ? "Live" : "Draft"}</span></td>
       <td class="td-actions">
         <a href="/admin/volumes.html?book=${b.id}" class="btn btn-sm"><i class="ti ti-list"></i> Volumes</a>
-        <button class="btn btn-sm" onclick="editBook(${JSON.stringify(b).replace(/"/g,'&quot;')})"><i class="ti ti-pencil"></i></button>
+        <a href="/admin/edit-character.html?book=${b.id}" class="btn btn-sm"><i class="ti ti-users"></i> Characters</a>
+        <button class="btn btn-sm" onclick="editBook(${JSON.stringify(b).replace(/"/g, "&quot;")})"><i class="ti ti-pencil"></i></button>
         <button class="btn btn-sm btn-danger" onclick="deleteBook('${b.id}','${b.title}')"><i class="ti ti-trash"></i></button>
       </td>
     </tr>`;
-  }).join('');
-}
+          })
+          .join("");
+      }
 
-window.openBookModal = () => {
-  editId = null;
-  document.getElementById('modal-title').textContent = 'New Novel';
-  document.getElementById('b-title').value = '';
-  document.getElementById('b-desc').value = '';
-  document.getElementById('b-cover').value = '';
-  document.getElementById('b-symbol').value = '✦';
-  document.getElementById('b-color').value = '#111114';
-  document.getElementById('b-color-hex').value = '#111114';
-  document.getElementById('b-published').checked = false;
-  document.getElementById('book-modal').classList.add('show');
-};
+      window.openBookModal = () => {
+        editId = null;
+        document.getElementById("modal-title").textContent = "New Novel";
+        document.getElementById("b-title").value = "";
+        document.getElementById("b-desc").value = "";
+        document.getElementById("b-cover").value = "";
+        document.getElementById("b-symbol").value = "✦";
+        document.getElementById("b-color").value = "#111114";
+        document.getElementById("b-color-hex").value = "#111114";
+        document.getElementById("b-published").checked = false;
+        document.getElementById("book-modal").classList.add("show");
+      };
 
-window.editBook = (b) => {
-  editId = b.id;
-  document.getElementById('modal-title').textContent = 'Edit Novel';
-  document.getElementById('b-title').value = b.title;
-  document.getElementById('b-genre').value = b.genre;
-  document.getElementById('b-desc').value = b.description ?? '';
-  document.getElementById('b-cover').value = b.cover_url ?? '';
-  document.getElementById('b-symbol').value = b.symbol ?? '✦';
-  document.getElementById('b-color').value = b.color ?? '#111114';
-  document.getElementById('b-color-hex').value = b.color ?? '#111114';
-  document.getElementById('b-published').checked = b.published;
-  document.getElementById('book-modal').classList.add('show');
-};
+      window.editBook = (b) => {
+        editId = b.id;
+        document.getElementById("modal-title").textContent = "Edit Novel";
+        document.getElementById("b-title").value = b.title;
+        document.getElementById("b-genre").value = b.genre;
+        document.getElementById("b-desc").value = b.description ?? "";
+        document.getElementById("b-cover").value = b.cover_url ?? "";
+        document.getElementById("b-symbol").value = b.symbol ?? "✦";
+        document.getElementById("b-color").value = b.color ?? "#111114";
+        document.getElementById("b-color-hex").value = b.color ?? "#111114";
+        document.getElementById("b-published").checked = b.published;
+        document.getElementById("book-modal").classList.add("show");
+      };
 
-window.closeBookModal = () => document.getElementById('book-modal').classList.remove('show');
+      window.closeBookModal = () =>
+        document.getElementById("book-modal").classList.remove("show");
 
-window.saveBook = async () => {
-  const title = document.getElementById('b-title').value.trim();
-  if (!title) { toast('Please enter a title', 'error'); return; }
+      window.saveBook = async () => {
+        const title = document.getElementById("b-title").value.trim();
+        if (!title) {
+          toast("Please enter a title", "error");
+          return;
+        }
 
-  const payload = {
-    title,
-    slug: slugify(title),
-    genre: document.getElementById('b-genre').value,
-    description: document.getElementById('b-desc').value.trim(),
-    cover_url: document.getElementById('b-cover').value.trim() || null,
-    symbol: document.getElementById('b-symbol').value.trim() || '✦',
-    color: document.getElementById('b-color-hex').value || document.getElementById('b-color').value,
-    published: document.getElementById('b-published').checked,
-  };
+        const payload = {
+          title,
+          slug: slugify(title),
+          genre: document.getElementById("b-genre").value,
+          description: document.getElementById("b-desc").value.trim(),
+          cover_url: document.getElementById("b-cover").value.trim() || null,
+          symbol: document.getElementById("b-symbol").value.trim() || "✦",
+          color:
+            document.getElementById("b-color-hex").value ||
+            document.getElementById("b-color").value,
+          published: document.getElementById("b-published").checked,
+        };
 
-  const { error } = editId
-    ? await db.from('books').update(payload).eq('id', editId)
-    : await db.from('books').insert(payload);
+        const { error } = editId
+          ? await db.from("books").update(payload).eq("id", editId)
+          : await db.from("books").insert(payload);
 
-  if (error) { toast('Error: ' + error.message, 'error'); return; }
-  toast(editId ? 'Novel updated!' : 'Novel created!', 'success');
-  closeBookModal(); loadBooks();
-};
+        if (error) {
+          toast("Error: " + error.message, "error");
+          return;
+        }
+        toast(editId ? "Novel updated!" : "Novel created!", "success");
+        closeBookModal();
+        loadBooks();
+      };
 
-window.deleteBook = async (id, title) => {
-  const ok = await confirm('Delete novel?', `"${title}" and all its volumes and chapters will be permanently deleted.`);
-  if (!ok) return;
-  await db.from('books').delete().eq('id', id);
-  toast('Novel deleted');
-  loadBooks();
-};
+      window.deleteBook = async (id, title) => {
+        const ok = await confirm(
+          "Delete novel?",
+          `"${title}" and all its volumes and chapters will be permanently deleted.`,
+        );
+        if (!ok) return;
+        await db.from("books").delete().eq("id", id);
+        toast("Novel deleted");
+        loadBooks();
+      };
 
-loadBooks();
-</script>
-</body>
+      loadBooks();
+    </script>
+  </body>
 </html>
