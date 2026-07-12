@@ -441,6 +441,151 @@
         line-height: 1.7;
       }
 
+      /* ── Theories ── */
+      .theory-form-toggle {
+        margin-bottom: 1.5rem;
+      }
+      .theory-card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        margin-bottom: 1.25rem;
+      }
+      .theory-title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.3rem;
+        margin-bottom: 0.3rem;
+      }
+      .theory-meta {
+        font-size: 0.72rem;
+        color: var(--text3);
+      }
+      .theory-status-row {
+        margin: 0.6rem 0;
+      }
+      .theory-body {
+        font-size: 0.88rem;
+        color: var(--text2);
+        line-height: 1.75;
+        margin: 0.75rem 0;
+        white-space: pre-wrap;
+      }
+      .theory-footer {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .upvote-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.9rem;
+        border: 1px solid var(--border2);
+        background: var(--bg3);
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: all 0.2s;
+        color: var(--text2);
+        font-size: 0.82rem;
+      }
+      .upvote-btn:hover {
+        border-color: var(--gold);
+      }
+      .upvote-btn.voted {
+        border-color: var(--gold);
+        color: var(--gold);
+        background: var(--gold-dim);
+      }
+      .reply-toggle {
+        font-size: 0.78rem;
+        color: var(--text3);
+        cursor: pointer;
+        background: none;
+        border: none;
+      }
+      .reply-toggle:hover {
+        color: var(--gold);
+      }
+
+      /* Spoiler blur — click to reveal, not a hard content gate */
+      .theory-spoiler-wrap {
+        position: relative;
+      }
+      .theory-spoiler-wrap.blurred .theory-blurrable {
+        filter: blur(6px);
+        user-select: none;
+      }
+      .spoiler-reveal-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 0.5rem;
+        background: rgba(10, 10, 11, 0.4);
+        cursor: pointer;
+        border-radius: var(--radius-lg);
+        z-index: 2;
+      }
+      .theory-spoiler-wrap.blurred .spoiler-reveal-overlay {
+        display: flex;
+      }
+      .spoiler-reveal-overlay span {
+        font-family: "Cinzel", serif;
+        font-size: 0.65rem;
+        letter-spacing: 0.15em;
+        color: var(--gold);
+        text-transform: uppercase;
+      }
+
+      .theory-admin-status {
+        display: flex;
+        gap: 0.4rem;
+        margin: 0.75rem 0;
+        flex-wrap: wrap;
+      }
+      .theory-admin-status button {
+        font-size: 0.65rem;
+      }
+
+      .theory-replies {
+        display: none;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+      }
+      .theory-replies.show {
+        display: block;
+      }
+      .reply-item {
+        padding: 0.6rem 0;
+        font-size: 0.82rem;
+      }
+      .reply-author {
+        color: var(--text);
+        margin-right: 0.5rem;
+      }
+      .reply-date {
+        color: var(--text3);
+        font-size: 0.68rem;
+      }
+      .reply-content {
+        color: var(--text2);
+        line-height: 1.6;
+        margin-top: 0.2rem;
+      }
+      .reply-form {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+      }
+      .reply-form input {
+        flex: 1;
+      }
+
       @media (max-width: 768px) {
         .book-layout {
           grid-template-columns: 1fr;
@@ -560,15 +705,31 @@
           <div class="book-tabs">
             <button
               class="book-tab active"
+              data-tab="volumes"
               onclick="switchTab('volumes', this)"
             >
               Volumes
             </button>
-            <button class="book-tab" onclick="switchTab('characters', this)">
+            <button
+              class="book-tab"
+              data-tab="characters"
+              onclick="switchTab('characters', this)"
+            >
               Characters
             </button>
-            <button class="book-tab" onclick="switchTab('reviews', this)">
+            <button
+              class="book-tab"
+              data-tab="reviews"
+              onclick="switchTab('reviews', this)"
+            >
               Reviews
+            </button>
+            <button
+              class="book-tab"
+              data-tab="theories"
+              onclick="switchTab('theories', this)"
+            >
+              Theories
             </button>
           </div>
 
@@ -630,6 +791,34 @@
               </div>
             </div>
           </div>
+
+          <!-- Theories tab -->
+          <div class="tab-panel" id="tab-theories">
+            <div class="theory-form-toggle">
+              <button
+                class="btn btn-primary"
+                id="post-theory-btn"
+                onclick="openTheoryModal()"
+                style="display: none"
+              >
+                <i class="ti ti-bulb"></i> Post a Theory
+              </button>
+              <p
+                class="text-sm text-muted"
+                id="login-to-theorize"
+                style="display: none"
+              >
+                <a href="/login.html" class="text-gold">Sign in</a> to post a
+                theory.
+              </p>
+            </div>
+            <div id="theories-list">
+              <div class="empty">
+                <div class="empty-icon">💡</div>
+                <p>No theories yet. Be the first to speculate!</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -649,9 +838,51 @@
       </div>
     </div>
 
+    <!-- POST THEORY MODAL -->
+    <div class="overlay" id="theory-modal">
+      <div class="dialog" style="max-width: 480px; text-align: left">
+        <h3>Post a Theory</h3>
+        <div style="margin-top: 1.25rem">
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input
+              id="th-title"
+              class="form-input"
+              placeholder="A short, punchy headline..."
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Your Theory</label>
+            <textarea
+              id="th-content"
+              class="form-input"
+              rows="4"
+              placeholder="Lay out your evidence..."
+            ></textarea>
+          </div>
+          <div class="toggle-wrap mt-2">
+            <label class="toggle"
+              ><input type="checkbox" id="th-spoiler" /><span
+                class="toggle-slider"
+              ></span
+            ></label>
+            <span class="toggle-label"
+              >Contains spoilers — blur until clicked</span
+            >
+          </div>
+        </div>
+        <div class="dialog-btns mt-3">
+          <button class="btn btn-primary" onclick="submitTheory()">
+            Post Theory
+          </button>
+          <button class="btn" onclick="closeTheoryModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
     <script type="module">
       import db from "/js/supabase.js";
-      import { initAuth, toast, escapeHtml } from "/js/app.js";
+      import { initAuth, toast, escapeHtml, isAdmin } from "/js/app.js";
 
       const params = new URLSearchParams(location.search);
       const bookId = params.get("id");
@@ -750,12 +981,16 @@
         // Load extras
         loadCharacters();
         loadReviews();
+        loadTheories();
         loadLikesCount();
         if (currentUser) {
           checkBookmark();
           checkNotify();
+          document.getElementById("post-theory-btn").style.display =
+            "inline-flex";
         } else {
           document.getElementById("login-to-review").style.display = "block";
+          document.getElementById("login-to-theorize").style.display = "block";
         }
       }
 
@@ -795,7 +1030,9 @@
         document
           .querySelectorAll(".tab-panel")
           .forEach((p) => p.classList.remove("active"));
-        btn.classList.add("active");
+        (btn || document.querySelector(`[data-tab="${tab}"]`))?.classList.add(
+          "active",
+        );
         document.getElementById("tab-" + tab).classList.add("active");
       };
 
@@ -948,6 +1185,224 @@
         loadReviews();
       };
 
+      // ── Theories ──
+      const THEORY_STATUS_BADGE = {
+        confirmed: "badge-green",
+        debunked: "badge-red",
+        interesting: "badge-gold",
+      };
+      const THEORY_STATUS_LABEL = {
+        confirmed: "Confirmed",
+        debunked: "Debunked",
+        interesting: "Interesting",
+      };
+      let theories = [];
+      let myUpvotedTheories = new Set();
+      let repliesLoaded = new Set();
+
+      async function loadTheories() {
+        const { data, error } = await db
+          .from("theories")
+          .select("*, profiles(username)")
+          .eq("book_id", bookId)
+          .order("upvotes", { ascending: false });
+
+        const list = document.getElementById("theories-list");
+        if (error) {
+          console.error("loadTheories failed:", error.message);
+          list.innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load theories right now.</p></div>`;
+          return;
+        }
+
+        theories = data ?? [];
+        if (!theories.length) return; // keep default empty state
+
+        if (currentUser) {
+          const { data: votes } = await db
+            .from("theory_votes")
+            .select("theory_id")
+            .eq("user_id", currentUser.id)
+            .in(
+              "theory_id",
+              theories.map((t) => t.id),
+            );
+          myUpvotedTheories = new Set((votes ?? []).map((v) => v.theory_id));
+        }
+
+        list.innerHTML = theories.map(renderTheoryCard).join("");
+      }
+
+      function renderTheoryCard(t) {
+        const voted = myUpvotedTheories.has(t.id);
+        const statusBadge = t.status
+          ? `<div class="theory-status-row"><span class="badge ${THEORY_STATUS_BADGE[t.status] ?? ""}">${THEORY_STATUS_LABEL[t.status] ?? t.status}</span></div>`
+          : "";
+        const adminControls = isAdmin()
+          ? `
+    <div class="theory-admin-status">
+      <button class="btn btn-sm${t.status === "confirmed" ? " badge-green" : ""}" onclick="setTheoryStatus('${t.id}','confirmed')">Confirmed</button>
+      <button class="btn btn-sm${t.status === "debunked" ? " badge-red" : ""}" onclick="setTheoryStatus('${t.id}','debunked')">Debunked</button>
+      <button class="btn btn-sm${t.status === "interesting" ? " badge-gold" : ""}" onclick="setTheoryStatus('${t.id}','interesting')">Interesting</button>
+      ${t.status ? `<button class="btn btn-sm" onclick="setTheoryStatus('${t.id}',null)">Clear</button>` : ""}
+    </div>`
+          : "";
+
+        return `
+  <div class="theory-spoiler-wrap${t.spoiler ? " blurred" : ""}" id="theory-${t.id}">
+    ${t.spoiler ? `<div class="spoiler-reveal-overlay" onclick="revealSpoiler('${t.id}')"><i class="ti ti-eye-off"></i><span>Spoiler theory — click to reveal</span></div>` : ""}
+    <div class="theory-card theory-blurrable">
+      <div class="theory-title">${escapeHtml(t.title)}</div>
+      <div class="theory-meta">${escapeHtml(t.profiles?.username ?? "Reader")} · ${new Date(t.created_at).toLocaleDateString()}</div>
+      ${statusBadge}
+      <div class="theory-body">${escapeHtml(t.content)}</div>
+      ${adminControls}
+      <div class="theory-footer">
+        <button class="upvote-btn${voted ? " voted" : ""}" onclick="toggleUpvote('${t.id}')">
+          <i class="ti ti-arrow-big-up"></i> <span id="upvote-count-${t.id}">${t.upvotes ?? 0}</span>
+        </button>
+        <button class="reply-toggle" onclick="toggleReplies('${t.id}')"><i class="ti ti-message-circle"></i> Replies</button>
+      </div>
+      <div class="theory-replies" id="replies-${t.id}"></div>
+    </div>
+  </div>`;
+      }
+
+      window.revealSpoiler = (id) => {
+        document.getElementById("theory-" + id).classList.remove("blurred");
+      };
+
+      window.toggleUpvote = async (id) => {
+        if (!currentUser) {
+          location.href = "/login.html";
+          return;
+        }
+        const { data, error } = await db.rpc("toggle_theory_upvote", {
+          p_theory_id: id,
+        });
+        if (error) {
+          toast("Error: " + error.message, "error");
+          return;
+        }
+        const result = data?.[0];
+        if (!result) return;
+        if (result.upvoted) myUpvotedTheories.add(id);
+        else myUpvotedTheories.delete(id);
+        document
+          .querySelector(`#theory-${id} .upvote-btn`)
+          .classList.toggle("voted", result.upvoted);
+        document.getElementById("upvote-count-" + id).textContent =
+          result.new_count;
+      };
+
+      window.setTheoryStatus = async (id, status) => {
+        const { error } = await db
+          .from("theories")
+          .update({ status })
+          .eq("id", id);
+        if (error) {
+          toast("Error: " + error.message, "error");
+          return;
+        }
+        toast("Status updated");
+        loadTheories();
+      };
+
+      window.toggleReplies = async (theoryId) => {
+        const el = document.getElementById("replies-" + theoryId);
+        const showing = el.classList.toggle("show");
+        if (showing && !repliesLoaded.has(theoryId)) {
+          repliesLoaded.add(theoryId);
+          await loadReplies(theoryId);
+        }
+      };
+
+      async function loadReplies(theoryId) {
+        const el = document.getElementById("replies-" + theoryId);
+        const { data, error } = await db
+          .from("comments")
+          .select("id, content, created_at, profiles(username)")
+          .eq("theory_id", theoryId)
+          .eq("approved", true)
+          .order("created_at", { ascending: true });
+
+        const repliesHtml = error
+          ? `<p class="text-sm text-muted">Couldn't load replies.</p>`
+          : !data?.length
+            ? `<p class="text-sm text-muted">No replies yet.</p>`
+            : data
+                .map(
+                  (r) => `
+        <div class="reply-item">
+          <span class="reply-author">${escapeHtml(r.profiles?.username ?? "Reader")}</span>
+          <span class="reply-date">${new Date(r.created_at).toLocaleDateString()}</span>
+          <div class="reply-content">${escapeHtml(r.content)}</div>
+        </div>`,
+                )
+                .join("");
+
+        const formHtml = currentUser
+          ? `<div class="reply-form">
+         <input id="reply-input-${theoryId}" class="form-input" placeholder="Reply to this theory...">
+         <button class="btn btn-sm btn-primary" onclick="postReply('${theoryId}')">Send</button>
+       </div>`
+          : `<p class="text-sm text-muted mt-1"><a href="/login.html" class="text-gold">Sign in</a> to reply.</p>`;
+
+        el.innerHTML = repliesHtml + formHtml;
+      }
+
+      window.postReply = async (theoryId) => {
+        const input = document.getElementById("reply-input-" + theoryId);
+        const content = input.value.trim();
+        if (!content) return;
+        const { error } = await db
+          .from("comments")
+          .insert({ theory_id: theoryId, user_id: currentUser.id, content });
+        if (error) {
+          toast("Error: " + error.message, "error");
+          return;
+        }
+        input.value = "";
+        toast("Reply submitted — visible once approved", "success");
+      };
+
+      // ── Post a theory ──
+      window.openTheoryModal = () => {
+        if (!currentUser) {
+          location.href = "/login.html";
+          return;
+        }
+        document.getElementById("th-title").value = "";
+        document.getElementById("th-content").value = "";
+        document.getElementById("th-spoiler").checked = false;
+        document.getElementById("theory-modal").classList.add("show");
+      };
+      window.closeTheoryModal = () =>
+        document.getElementById("theory-modal").classList.remove("show");
+
+      window.submitTheory = async () => {
+        const title = document.getElementById("th-title").value.trim();
+        const content = document.getElementById("th-content").value.trim();
+        if (!title || !content) {
+          toast("Please fill in both a title and your theory", "error");
+          return;
+        }
+
+        const { error } = await db.from("theories").insert({
+          book_id: bookId,
+          user_id: currentUser.id,
+          title,
+          content,
+          spoiler: document.getElementById("th-spoiler").checked,
+        });
+        if (error) {
+          toast("Error: " + error.message, "error");
+          return;
+        }
+        toast("Theory posted!", "success");
+        closeTheoryModal();
+        loadTheories();
+      };
+
       // ── Bookmark ──
       async function checkBookmark() {
         const { data, error } = await db
@@ -1047,6 +1502,7 @@
       }
 
       loadBook();
+      if (location.hash === "#theories") switchTab("theories");
     </script>
   </body>
 </html>

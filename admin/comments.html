@@ -1,187 +1,314 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<script>document.documentElement.classList.add('auth-pending');</script>
-<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Comments — Admin</title>
-<link rel="stylesheet" href="../css/style.css">
-<link rel="stylesheet" href="../css/admin.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<style>
-  .filter-tabs { display: flex; gap: 0.6rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-  .filter-tabs .btn { position: relative; }
-  .filter-count {
-    display: inline-block; margin-left: 0.4rem; font-size: 0.7rem; opacity: 0.75;
-  }
-  .comment-cell { max-width: 420px; white-space: normal; line-height: 1.6; }
-  .chapter-cell a { color: var(--text2); transition: color 0.2s; }
-  .chapter-cell a:hover { color: var(--gold); }
-  .chapter-cell .book-name { display: block; font-size: 0.7rem; color: var(--text3); margin-top: 0.15rem; }
-</style>
-</head>
-<body>
-<nav class="nav">
-  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
-  <div id="nav-right" class="nav-right"></div>
-</nav>
+  <head>
+    <script>
+      document.documentElement.classList.add("auth-pending");
+    </script>
+    <style>
+      html {
+        background: #0a0a0b;
+      }
+      .auth-pending body {
+        visibility: hidden;
+      }
+    </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comments — Admin</title>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <style>
+      .filter-tabs {
+        display: flex;
+        gap: 0.6rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+      }
+      .filter-tabs .btn {
+        position: relative;
+      }
+      .filter-count {
+        display: inline-block;
+        margin-left: 0.4rem;
+        font-size: 0.7rem;
+        opacity: 0.75;
+      }
+      .comment-cell {
+        max-width: 420px;
+        white-space: normal;
+        line-height: 1.6;
+      }
+      .chapter-cell a {
+        color: var(--text2);
+        transition: color 0.2s;
+      }
+      .chapter-cell a:hover {
+        color: var(--gold);
+      }
+      .chapter-cell .book-name {
+        display: block;
+        font-size: 0.7rem;
+        color: var(--text3);
+        margin-top: 0.15rem;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <span class="nav-logo" onclick="location.href = '/'">MY NOVEL WORLD</span>
+      <div id="nav-right" class="nav-right"></div>
+    </nav>
 
-<div class="admin-layout">
-  <aside class="admin-sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-label">Content</div>
-      <a href="/admin/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
-      <a href="/admin/books.html" class="sidebar-link"><i class="ti ti-books"></i>Novels</a>
-      <a href="/admin/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>Reading Order</a>
-      <a href="/admin/posts.html" class="sidebar-link"><i class="ti ti-speakerphone"></i>Updates</a>
-      <a href="/admin/countdown.html" class="sidebar-link"><i class="ti ti-hourglass"></i>Countdown</a>
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Content</div>
+          <a href="/admin/" class="sidebar-link"
+            ><i class="ti ti-layout-dashboard"></i>Dashboard</a
+          >
+          <a href="/admin/books.html" class="sidebar-link"
+            ><i class="ti ti-books"></i>Novels</a
+          >
+          <a href="/admin/reading-order.html" class="sidebar-link"
+            ><i class="ti ti-list-numbers"></i>Reading Order</a
+          >
+          <a href="/admin/posts.html" class="sidebar-link"
+            ><i class="ti ti-speakerphone"></i>Updates</a
+          >
+          <a href="/admin/countdown.html" class="sidebar-link"
+            ><i class="ti ti-hourglass"></i>Countdown</a
+          >
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Community</div>
+          <a href="/admin/comments.html" class="sidebar-link active"
+            ><i class="ti ti-message-dots"></i>Comments</a
+          >
+          <a href="/admin/qa.html" class="sidebar-link"
+            ><i class="ti ti-question-mark"></i>Q&A</a
+          >
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Insights</div>
+          <a href="/admin/analytics.html" class="sidebar-link"
+            ><i class="ti ti-chart-line"></i>Analytics</a
+          >
+          <a href="/admin/writing.html" class="sidebar-link"
+            ><i class="ti ti-pencil"></i>Writing Tracker</a
+          >
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Site</div>
+          <a href="/" class="sidebar-link"
+            ><i class="ti ti-arrow-left"></i>View Site</a
+          >
+        </div>
+      </aside>
+
+      <main class="admin-main fade-up">
+        <div class="admin-header">
+          <div>
+            <h1>Comments</h1>
+            <p>Review, approve, or remove reader comments.</p>
+          </div>
+        </div>
+
+        <div class="filter-tabs" id="filter-tabs">
+          <button
+            class="btn btn-primary"
+            data-filter="pending"
+            onclick="setFilter('pending')"
+          >
+            Pending<span class="filter-count" id="count-pending"></span>
+          </button>
+          <button
+            class="btn"
+            data-filter="approved"
+            onclick="setFilter('approved')"
+          >
+            Published<span class="filter-count" id="count-approved"></span>
+          </button>
+          <button class="btn" data-filter="all" onclick="setFilter('all')">
+            All
+          </button>
+        </div>
+
+        <div class="card" style="overflow: hidden">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Reader</th>
+                <th>Chapter</th>
+                <th>Comment</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="comments-body">
+              <tr>
+                <td colspan="6">
+                  <div class="empty">
+                    <div class="empty-icon">💬</div>
+                    <p>Loading comments...</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
     </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Community</div>
-      <a href="/admin/comments.html" class="sidebar-link active"><i class="ti ti-message-dots"></i>Comments</a>
-      <a href="/admin/qa.html" class="sidebar-link"><i class="ti ti-question-mark"></i>Q&A</a>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Insights</div>
-      <a href="/admin/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
-      <a href="/admin/writing.html" class="sidebar-link"><i class="ti ti-pencil"></i>Writing Tracker</a>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Site</div>
-      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
-    </div>
-  </aside>
 
-  <main class="admin-main fade-up">
-    <div class="admin-header">
-      <div>
-        <h1>Comments</h1>
-        <p>Review, approve, or remove reader comments.</p>
-      </div>
-    </div>
+    <script type="module">
+      import db from "../js/supabase.js";
+      import { requireAdmin, toast, confirm, escapeHtml } from "../js/app.js";
 
-    <div class="filter-tabs" id="filter-tabs">
-      <button class="btn btn-primary" data-filter="pending" onclick="setFilter('pending')">
-        Pending<span class="filter-count" id="count-pending"></span>
-      </button>
-      <button class="btn" data-filter="approved" onclick="setFilter('approved')">
-        Published<span class="filter-count" id="count-approved"></span>
-      </button>
-      <button class="btn" data-filter="all" onclick="setFilter('all')">All</button>
-    </div>
+      if (!(await requireAdmin())) throw new Error("Not admin");
 
-    <div class="card" style="overflow:hidden">
-      <table class="admin-table">
-        <thead><tr>
-          <th>Reader</th><th>Chapter</th><th>Comment</th><th>Date</th><th>Status</th><th></th>
-        </tr></thead>
-        <tbody id="comments-body">
-          <tr><td colspan="6"><div class="empty"><div class="empty-icon">💬</div><p>Loading comments...</p></div></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </main>
-</div>
+      let currentFilter = "pending";
 
-<script type="module">
-import db from '../js/supabase.js';
-import { requireAdmin, toast, confirm, escapeHtml } from '../js/app.js';
+      window.setFilter = (f) => {
+        currentFilter = f;
+        document.querySelectorAll("#filter-tabs button").forEach((b) => {
+          b.classList.toggle("btn-primary", b.dataset.filter === f);
+        });
+        loadComments();
+      };
 
-if (!await requireAdmin()) throw new Error('Not admin');
+      async function loadCounts() {
+        const [{ count: pending }, { count: approved }] = await Promise.all([
+          db
+            .from("comments")
+            .select("id", { count: "exact", head: true })
+            .eq("approved", false),
+          db
+            .from("comments")
+            .select("id", { count: "exact", head: true })
+            .eq("approved", true),
+        ]);
+        document.getElementById("count-pending").textContent =
+          ` (${pending ?? 0})`;
+        document.getElementById("count-approved").textContent =
+          ` (${approved ?? 0})`;
+      }
 
-let currentFilter = 'pending';
+      async function loadComments() {
+        let query = db
+          .from("comments")
+          .select(
+            "id, content, created_at, approved, profiles(username), chapters(id, title, books(title)), theories(id, title, book_id, books(title))",
+          )
+          .order("created_at", { ascending: false })
+          .limit(200);
 
-window.setFilter = (f) => {
-  currentFilter = f;
-  document.querySelectorAll('#filter-tabs button').forEach(b => {
-    b.classList.toggle('btn-primary', b.dataset.filter === f);
-  });
-  loadComments();
-};
+        if (currentFilter === "pending") query = query.eq("approved", false);
+        if (currentFilter === "approved") query = query.eq("approved", true);
 
-async function loadCounts() {
-  const [{ count: pending }, { count: approved }] = await Promise.all([
-    db.from('comments').select('id', { count: 'exact', head: true }).eq('approved', false),
-    db.from('comments').select('id', { count: 'exact', head: true }).eq('approved', true),
-  ]);
-  document.getElementById('count-pending').textContent  = ` (${pending ?? 0})`;
-  document.getElementById('count-approved').textContent = ` (${approved ?? 0})`;
-}
+        const { data, error } = await query;
+        const body = document.getElementById("comments-body");
 
-async function loadComments() {
-  let query = db.from('comments')
-    .select('id, content, created_at, approved, profiles(username), chapters(id, title, books(title))')
-    .order('created_at', { ascending: false })
-    .limit(200);
+        if (error) {
+          console.error("loadComments failed:", error.message);
+          body.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load comments: ${escapeHtml(error.message)}</p></div></td></tr>`;
+          return;
+        }
 
-  if (currentFilter === 'pending')  query = query.eq('approved', false);
-  if (currentFilter === 'approved') query = query.eq('approved', true);
+        if (!data?.length) {
+          const msg =
+            currentFilter === "pending"
+              ? "No pending comments — you're all caught up."
+              : currentFilter === "approved"
+                ? "No published comments yet."
+                : "No comments yet.";
+          body.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">💬</div><p>${msg}</p></div></td></tr>`;
+          return;
+        }
 
-  const { data, error } = await query;
-  const body = document.getElementById('comments-body');
-
-  if (error) {
-    console.error('loadComments failed:', error.message);
-    body.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">⚠</div><p>Couldn't load comments: ${escapeHtml(error.message)}</p></div></td></tr>`;
-    return;
-  }
-
-  if (!data?.length) {
-    const msg = currentFilter === 'pending' ? 'No pending comments — you\'re all caught up.'
-              : currentFilter === 'approved' ? 'No published comments yet.'
-              : 'No comments yet.';
-    body.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">💬</div><p>${msg}</p></div></td></tr>`;
-    return;
-  }
-
-  body.innerHTML = data.map(c => {
-    const ch = c.chapters, book = ch?.books;
-    return `
+        body.innerHTML = data
+          .map((c) => {
+            const ch = c.chapters,
+              book = ch?.books;
+            const th = c.theories,
+              thBook = th?.books;
+            return `
     <tr>
-      <td>${escapeHtml(c.profiles?.username ?? 'Reader')}</td>
+      <td>${escapeHtml(c.profiles?.username ?? "Reader")}</td>
       <td class="chapter-cell">
-        ${ch ? `<a href="/admin/edit-chapter.html?id=${ch.id}">${escapeHtml(ch.title)}</a>` : '<span class="text-muted">Deleted chapter</span>'}
-        ${book ? `<span class="book-name">${escapeHtml(book.title)}</span>` : ''}
+        ${
+          ch
+            ? `<a href="/admin/edit-chapter.html?id=${ch.id}">${escapeHtml(ch.title)}</a>${book ? `<span class="book-name">${escapeHtml(book.title)}</span>` : ""}`
+            : th
+              ? `<a href="/book.html?id=${th.book_id}#theories"><i class="ti ti-bulb"></i> ${escapeHtml(th.title)}</a><span class="book-name">Theory reply${thBook ? ` · ${escapeHtml(thBook.title)}` : ""}</span>`
+              : '<span class="text-muted">Deleted chapter</span>'
+        }
       </td>
       <td class="comment-cell">${escapeHtml(c.content)}</td>
       <td class="text-sm text-muted" style="white-space:nowrap">${new Date(c.created_at).toLocaleDateString()}</td>
-      <td><span class="badge ${c.approved ? 'badge-green' : 'badge-gold'}">${c.approved ? 'Published' : 'Pending'}</span></td>
+      <td><span class="badge ${c.approved ? "badge-green" : "badge-gold"}">${c.approved ? "Published" : "Pending"}</span></td>
       <td class="td-actions">
-        ${c.approved
-          ? `<button class="btn btn-sm" onclick="unapproveComment('${c.id}')"><i class="ti ti-eye-off"></i> Unpublish</button>`
-          : `<button class="btn btn-sm badge-green" onclick="approveComment('${c.id}')"><i class="ti ti-check"></i> Approve</button>`}
+        ${
+          c.approved
+            ? `<button class="btn btn-sm" onclick="unapproveComment('${c.id}')"><i class="ti ti-eye-off"></i> Unpublish</button>`
+            : `<button class="btn btn-sm badge-green" onclick="approveComment('${c.id}')"><i class="ti ti-check"></i> Approve</button>`
+        }
         <button class="btn btn-sm btn-danger" onclick="deleteComment('${c.id}')"><i class="ti ti-trash"></i></button>
       </td>
     </tr>`;
-  }).join('');
-}
+          })
+          .join("");
+      }
 
-window.approveComment = async (id) => {
-  const { error } = await db.from('comments').update({ approved: true }).eq('id', id);
-  if (error) { toast('Error: ' + error.message, 'error'); return; }
-  toast('Comment approved', 'success');
-  loadCounts(); loadComments();
-};
+      window.approveComment = async (id) => {
+        const { error } = await db
+          .from("comments")
+          .update({ approved: true })
+          .eq("id", id);
+        if (error) {
+          toast("Error: " + error.message, "error");
+          return;
+        }
+        toast("Comment approved", "success");
+        loadCounts();
+        loadComments();
+      };
 
-window.unapproveComment = async (id) => {
-  const { error } = await db.from('comments').update({ approved: false }).eq('id', id);
-  if (error) { toast('Error: ' + error.message, 'error'); return; }
-  toast('Comment unpublished');
-  loadCounts(); loadComments();
-};
+      window.unapproveComment = async (id) => {
+        const { error } = await db
+          .from("comments")
+          .update({ approved: false })
+          .eq("id", id);
+        if (error) {
+          toast("Error: " + error.message, "error");
+          return;
+        }
+        toast("Comment unpublished");
+        loadCounts();
+        loadComments();
+      };
 
-window.deleteComment = async (id) => {
-  const ok = await confirm('Delete comment?', 'This will permanently remove this comment.');
-  if (!ok) return;
-  const { error } = await db.from('comments').delete().eq('id', id);
-  if (error) { toast('Error: ' + error.message, 'error'); return; }
-  toast('Comment deleted');
-  loadCounts(); loadComments();
-};
+      window.deleteComment = async (id) => {
+        const ok = await confirm(
+          "Delete comment?",
+          "This will permanently remove this comment.",
+        );
+        if (!ok) return;
+        const { error } = await db.from("comments").delete().eq("id", id);
+        if (error) {
+          toast("Error: " + error.message, "error");
+          return;
+        }
+        toast("Comment deleted");
+        loadCounts();
+        loadComments();
+      };
 
-loadCounts();
-loadComments();
-</script>
-</body>
+      loadCounts();
+      loadComments();
+    </script>
+  </body>
 </html>
