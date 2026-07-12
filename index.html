@@ -922,6 +922,14 @@
           .single();
         if (!data) return;
 
+        const target = new Date(data.target_date).getTime();
+
+        // Already expired before this page even loaded — reloading here would just
+        // re-fetch this same expired row and immediately reload again, forever.
+        // Only reloading when the timer actually crosses zero *during* an active
+        // tick (below) avoids that loop.
+        if (target - Date.now() <= 0) return;
+
         const banner = document.getElementById("countdown-banner");
         document.getElementById("countdown-title").textContent =
           data.title ?? "";
@@ -932,12 +940,12 @@
             (location.href = "/book.html?id=" + data.book_id);
         }
 
-        const target = new Date(data.target_date).getTime();
-
+        let intervalId;
         function tick() {
           const now = Date.now();
           const diff = target - now;
           if (diff <= 0) {
+            clearInterval(intervalId);
             location.reload();
             return;
           }
@@ -963,7 +971,7 @@
           );
         }
         tick();
-        setInterval(tick, 1000);
+        intervalId = setInterval(tick, 1000);
       }
 
       // ── Continue reading ──
