@@ -1471,14 +1471,18 @@
         const btn = document.getElementById("notify-btn");
         const isActive = btn.classList.contains("active");
         if (isActive) {
-          await db
+          const { error } = await db
             .from("email_subscriptions")
             .update({ active: false })
             .eq("user_id", currentUser.id)
             .eq("book_id", bookId);
+          if (error) {
+            toast("Error: " + error.message, "error");
+            return;
+          }
           toast("Notifications off");
         } else {
-          await db.from("email_subscriptions").upsert(
+          const { error } = await db.from("email_subscriptions").upsert(
             {
               user_id: currentUser.id,
               book_id: bookId,
@@ -1487,6 +1491,10 @@
             },
             { onConflict: "user_id,book_id" },
           );
+          if (error) {
+            toast("Error: " + error.message, "error");
+            return;
+          }
           toast("You'll be notified of new chapters!", "success");
         }
         btn.classList.toggle("active");
