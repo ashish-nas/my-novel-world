@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Author — My Novel World</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <style>
+      .author-hero {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 2.5rem;
+      }
+      .author-hero-avatar {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Cormorant Garamond", serif;
+        font-size: 2rem;
+        color: var(--gold);
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .author-hero-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .author-bio-text {
+        color: var(--text2);
+        line-height: 1.7;
+        max-width: 560px;
+        margin-top: 0.5rem;
+      }
+      .supporter-count {
+        font-size: 0.78rem;
+        color: var(--text3);
+        margin-top: 0.5rem;
+      }
+      .donate-widget {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        margin-top: 1.25rem;
+        align-items: center;
+      }
+      .amt-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--border);
+        background: var(--bg2);
+        color: var(--text);
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+      .amt-btn.active {
+        border-color: var(--gold);
+        color: var(--gold);
+      }
+      .amt-custom {
+        width: 90px;
+        padding: 0.5rem 0.7rem;
+        border: 1px solid var(--border);
+        background: var(--bg2);
+        color: var(--text);
+        border-radius: 3px;
+        font-size: 0.85rem;
+      }
+      .series-list .series-item {
+        display: flex;
+        align-items: baseline;
+        gap: 0.75rem;
+        padding: 0.75rem 0;
+        border-bottom: 0.5px solid var(--border);
+      }
+      .series-num {
+        color: var(--gold);
+        font-family: "Cormorant Garamond", serif;
+      }
+
+      /* ── Book card (copied from index.html's inline styles — these
+      classes live per-page, not in the shared stylesheet) ── */
+      .books-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 2rem;
+      }
+      .book-card {
+        cursor: pointer;
+        transition: transform 0.3s ease;
+      }
+      .book-card:hover {
+        transform: translateY(-6px);
+      }
+      .book-cover {
+        width: 100%;
+        aspect-ratio: 2/3;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 1rem;
+        transition: border-color 0.3s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      }
+      .book-card:hover .book-cover {
+        border-color: var(--border2);
+      }
+      .book-cover img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .book-cover-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, transparent 60%);
+      }
+      .book-symbol {
+        font-size: 2rem;
+        opacity: 0.5;
+        margin-bottom: 0.75rem;
+        position: relative;
+        z-index: 1;
+      }
+      .book-cover-title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1rem;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+        line-height: 1.3;
+      }
+      .book-genre-badge {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        font-family: "Cinzel", serif;
+        font-size: 0.45rem;
+        letter-spacing: 0.12em;
+        padding: 0.2rem 0.5rem;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid var(--border2);
+        color: var(--text2);
+        z-index: 1;
+      }
+      .book-info {
+        padding: 0 0.2rem;
+      }
+      .book-title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.1rem;
+        margin-bottom: 0.3rem;
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav" id="main-nav">
+      <span class="nav-logo" onclick="location.href = '/'">MY NOVEL WORLD</span>
+      <ul class="nav-links">
+        <li><a href="/">Library</a></li>
+        <li>
+          <a href="/updates.html"
+            >Updates<span class="nav-badge" id="updates-badge"></span
+          ></a>
+        </li>
+        <li><a href="/reading-order.html">Reading Order</a></li>
+        <li><a href="/authors.html">Authors</a></li>
+        <li><a href="/qa.html">Q&A</a></li>
+      </ul>
+      <div id="nav-right" class="nav-right"></div>
+    </nav>
+
+    <div class="page">
+      <div class="container">
+        <div class="author-hero fade-up">
+          <div class="author-hero-avatar" id="avatar"></div>
+          <div>
+            <p class="eyebrow" id="badge-line">Verified Writer</p>
+            <h1 class="section-title" id="pen-name">Loading...</h1>
+            <p class="author-bio-text" id="bio"></p>
+            <p class="supporter-count" id="supporter-count"></p>
+            <div id="donate-container"></div>
+          </div>
+        </div>
+
+        <div id="series-section" style="display: none; margin-bottom: 3rem" class="fade-up">
+          <h2 style="font-size: 1rem; margin-bottom: 1rem">Reading Order</h2>
+          <div class="card series-list" style="padding: 0.5rem 1.5rem" id="series-list"></div>
+        </div>
+
+        <div class="fade-up">
+          <h2 style="font-size: 1rem; margin-bottom: 1rem">Books</h2>
+          <div class="books-grid" id="books-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import db from "/js/supabase.js";
+      import { initAuth, currentUser, callFunction, toast, escapeHtml } from "/js/app.js";
+
+      await initAuth();
+
+      const params = new URLSearchParams(location.search);
+      const authorId = params.get("id");
+      if (!authorId) location.href = "/authors.html";
+
+      if (params.get("donated") === "1") {
+        toast("Thank you for your support!", "success");
+      }
+
+      const { data: author, error } = await db
+        .from("profiles")
+        .select("id, pen_name, bio, avatar_url, suspended, stripe_charges_enabled")
+        .eq("id", authorId)
+        .single();
+
+      if (error || !author) {
+        document.querySelector(".container").innerHTML = `<div class="empty"><p>Author not found.</p></div>`;
+        throw new Error("not found");
+      }
+
+      document.title = `${author.pen_name} — My Novel World`;
+      document.getElementById("pen-name").textContent = author.pen_name;
+      document.getElementById("avatar").innerHTML = author.avatar_url
+        ? `<img src="${author.avatar_url}" alt="">`
+        : (author.pen_name || "?")[0].toUpperCase();
+
+      // GAP FIX: suspended writer's profile stays reachable (their data
+      // isn't deleted), but shows a clear, non-judgmental state instead of
+      // their normal bio/books/donate widget.
+      if (author.suspended) {
+        document.getElementById("badge-line").textContent = "Not currently active";
+        document.getElementById("bio").textContent =
+          "This author's profile isn't currently active.";
+        document.getElementById("books-grid").innerHTML = "";
+      } else {
+        document.getElementById("badge-line").innerHTML =
+          '<i class="ti ti-rosette-discount-check" style="color:var(--gold)"></i> Verified Writer';
+        document.getElementById("bio").textContent = author.bio ?? "";
+        loadDonateWidget();
+        loadSupporterCount();
+        loadSeries();
+        loadBooks();
+      }
+
+      async function loadDonateWidget() {
+        if (!author.stripe_charges_enabled) return; // no widget at all if not set up
+        const el = document.getElementById("donate-container");
+        el.innerHTML = `
+          <div class="donate-widget">
+            <button class="amt-btn" data-v="300">$3</button>
+            <button class="amt-btn active" data-v="500">$5</button>
+            <button class="amt-btn" data-v="1000">$10</button>
+            <input class="amt-custom" id="custom-amt" placeholder="Custom $">
+            <button class="btn btn-primary" id="support-btn"><i class="ti ti-heart"></i> Support ${escapeHtml(author.pen_name)}</button>
+          </div>`;
+
+        let selected = 500;
+        el.querySelectorAll(".amt-btn").forEach((b) => {
+          b.onclick = () => {
+            selected = Number(b.dataset.v);
+            document.getElementById("custom-amt").value = "";
+            el.querySelectorAll(".amt-btn").forEach((x) => x.classList.remove("active"));
+            b.classList.add("active");
+          };
+        });
+        document.getElementById("custom-amt").oninput = (e) => {
+          el.querySelectorAll(".amt-btn").forEach((x) => x.classList.remove("active"));
+          selected = Math.round(parseFloat(e.target.value || "0") * 100);
+        };
+
+        document.getElementById("support-btn").onclick = async () => {
+          if (!currentUser) {
+            location.href = "/login.html";
+            return;
+          }
+          if (!selected || selected < 50) {
+            toast("Choose an amount of at least $0.50", "error");
+            return;
+          }
+          const json = await callFunction("create-donation-checkout", {
+            writer_id: author.id,
+            amount_cents: selected,
+          });
+          if (json.url) location.href = json.url;
+          else toast("Error: " + (json.error ?? "unknown"), "error");
+        };
+      }
+
+      async function loadSupporterCount() {
+        const { data } = await db.from("donations").select("donor_id").eq("writer_id", author.id).eq("status", "succeeded");
+        const unique = new Set((data ?? []).map((d) => d.donor_id)).size;
+        if (unique > 0) {
+          document.getElementById("supporter-count").textContent = `Supported by ${unique} reader${unique === 1 ? "" : "s"}`;
+        }
+      }
+
+      async function loadSeries() {
+        const { data } = await db
+          .from("writer_series_order")
+          .select("sort_order, note, books(id, title)")
+          .eq("writer_id", author.id)
+          .order("sort_order");
+        if (!data?.length) return;
+        document.getElementById("series-section").style.display = "block";
+        document.getElementById("series-list").innerHTML = data
+          .map(
+            (s, i) => `
+          <div class="series-item">
+            <span class="series-num">${i + 1}</span>
+            <div>
+              <a href="/book.html?id=${s.books?.id}" style="color:var(--text)">${escapeHtml(s.books?.title ?? "")}</a>
+              ${s.note ? `<div style="font-size:.75rem;color:var(--text3)">${escapeHtml(s.note)}</div>` : ""}
+            </div>
+          </div>`,
+          )
+          .join("");
+      }
+
+      async function loadBooks() {
+        const { data } = await db
+          .from("book_authors")
+          .select("books(id, title, genre, cover_url, symbol, color, published)")
+          .eq("user_id", author.id)
+          .eq("status", "accepted");
+
+        const books = (data ?? []).map((r) => r.books).filter((b) => b?.published);
+        const grid = document.getElementById("books-grid");
+
+        if (!books.length) {
+          grid.innerHTML = `<div class="empty"><p>No published books yet.</p></div>`;
+          return;
+        }
+
+        grid.innerHTML = books
+          .map(
+            (b) => `
+          <div class="book-card fade-up" onclick="location.href='/book.html?id=${b.id}'">
+            <div class="book-cover" style="background:${b.color || "#111114"}">
+              ${
+                b.cover_url
+                  ? `<img src="${b.cover_url}" alt="${escapeHtml(b.title)}" loading="lazy"><div class="book-cover-overlay"></div>`
+                  : `<div class="book-symbol">${b.symbol || "✦"}</div><div class="book-cover-title">${escapeHtml(b.title)}</div>`
+              }
+              <div class="book-genre-badge">${escapeHtml(b.genre || "")}</div>
+            </div>
+            <div class="book-info"><div class="book-title">${escapeHtml(b.title)}</div></div>
+          </div>`,
+          )
+          .join("");
+      }
+    </script>
+  </body>
+</html>

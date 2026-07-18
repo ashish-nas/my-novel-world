@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Reading Order — Write</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+<nav class="nav"><span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span><div id="nav-right" class="nav-right"></div></nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Write</div>
+      <a href="/write/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard & Books</a>
+      <a href="/write/reading-order.html" class="sidebar-link active"><i class="ti ti-list-numbers"></i>My Reading Order</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/write/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments & Reviews</a>
+      <a href="/write/reports.html" class="sidebar-link"><i class="ti ti-flag"></i>Reports</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/write/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/write/earnings.html" class="sidebar-link"><i class="ti ti-currency-dollar"></i>Earnings</a>
+    </div>
+    <div class="sidebar-section"><div class="sidebar-label">Site</div><a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a></div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header"><div><h1>My Reading Order</h1><p>How your own books should be read, in order. Shown on your public Author Profile. Separate from the site's own Recommended Reading Order page.</p></div></div>
+    <div id="list"></div>
+    <button class="btn btn-primary mt-3" onclick="saveOrder()"><i class="ti ti-device-floppy"></i> Save Order</button>
+  </main>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { requireWriter, currentUser, toast, escapeHtml } from '../js/app.js';
+
+if (!await requireWriter()) throw new Error('Not a Writer');
+
+const { data: myBooks } = await db.from('book_authors')
+  .select('book_id, books(id, title, genre)')
+  .eq('user_id', currentUser.id).eq('status', 'accepted');
+
+const { data: existingOrder } = await db.from('writer_series_order')
+  .select('book_id, sort_order, note').eq('writer_id', currentUser.id);
+
+const orderMap = Object.fromEntries((existingOrder ?? []).map(o => [o.book_id, o]));
+
+const books = (myBooks ?? [])
+  .map(b => b.books)
+  .filter(Boolean)
+  .sort((a, b) => (orderMap[a.id]?.sort_order ?? 999) - (orderMap[b.id]?.sort_order ?? 999));
+
+const list = document.getElementById('list');
+if (!books.length) {
+  list.innerHTML = `<div class="empty card" style="padding:3rem"><p>You need at least one book first.</p></div>`;
+} else {
+  list.innerHTML = books.map((b, i) => `
+    <div class="card" style="padding:1rem 1.5rem;margin-bottom:.75rem;display:flex;align-items:center;gap:1rem" data-book="${b.id}">
+      <span style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--gold);width:2rem">${i + 1}</span>
+      <div style="flex:1">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem">${escapeHtml(b.title)}</div>
+        <input class="form-input note-input" placeholder="e.g. Start here / Prequel / Optional side story" value="${escapeHtml(orderMap[b.id]?.note ?? '')}" style="margin-top:.4rem;font-size:.8rem">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.25rem">
+        <button class="btn btn-sm" onclick="move('${b.id}',-1)"><i class="ti ti-chevron-up"></i></button>
+        <button class="btn btn-sm" onclick="move('${b.id}',1)"><i class="ti ti-chevron-down"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+window.move = (bookId, dir) => {
+  const cards = [...document.querySelectorAll('[data-book]')];
+  const idx = cards.findIndex(c => c.dataset.book === bookId);
+  const swapWith = idx + dir;
+  if (swapWith < 0 || swapWith >= cards.length) return;
+  const parent = cards[idx].parentNode;
+  if (dir < 0) parent.insertBefore(cards[idx], cards[swapWith]);
+  else parent.insertBefore(cards[swapWith], cards[idx]);
+  renumber();
+};
+
+function renumber() {
+  document.querySelectorAll('[data-book]').forEach((card, i) => {
+    card.querySelector('span').textContent = i + 1;
+  });
+}
+
+window.saveOrder = async () => {
+  const cards = [...document.querySelectorAll('[data-book]')];
+  const rows = cards.map((c, i) => ({
+    book_id: c.dataset.book,
+    writer_id: currentUser.id,
+    sort_order: i,
+    note: c.querySelector('.note-input').value.trim(),
+  }));
+  const { error } = await db.from('writer_series_order').upsert(rows, { onConflict: 'book_id,writer_id' });
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Reading order saved!', 'success');
+};
+</script>
+</body>
+</html>

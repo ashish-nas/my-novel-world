@@ -1,4 +1,6 @@
 // ── app.js — shared across all pages ─────────
+// v2.0 changes are marked "NEW". Everything else is byte-for-byte what
+// you already have — copy this over your existing js/app.js.
 import db from "./supabase.js";
 
 export let currentUser = null;
@@ -44,6 +46,25 @@ async function getSessionAndProfile() {
   await db.from("profiles").insert(newP);
   localStorage.setItem("mnw_profile", JSON.stringify(newP));
   return { user, profile: newP };
+}
+
+// NEW — force a fresh profile fetch and re-cache it. Used by profile.html
+// right after checking application status, since role changes (reader →
+// writer) happen server-side (via approve_writer_application) and the
+// localStorage cache above has no way to know that on its own.
+export async function refreshProfile() {
+  if (!currentUser) return null;
+  const { data: profile } = await db
+    .from("profiles")
+    .select("*")
+    .eq("id", currentUser.id)
+    .single();
+  if (profile) {
+    currentProfile = profile;
+    localStorage.setItem("mnw_profile", JSON.stringify(profile));
+    renderNav();
+  }
+  return profile;
 }
 
 // ── Reveal page content once an auth gate has passed.
@@ -100,8 +121,41 @@ export async function requireAdmin() {
   return true;
 }
 
+// NEW — requireWriter: redirect home unless role is 'writer' or 'admin'
+// (admin implicitly has every Writer capability — see design doc v2.0 §1.3).
+// Also blocks a suspended account even if their role was never revoked.
+export async function requireWriter() {
+  const { user, profile } = await getSessionAndProfile();
+
+  if (!user) {
+    location.href =
+      "/login.html?redirect=" + encodeURIComponent(location.pathname);
+    return false;
+  }
+
+  currentUser = user;
+  currentProfile = profile;
+  renderNav();
+
+  if (!["writer", "admin"].includes(currentProfile?.role) || currentProfile?.suspended) {
+    location.href = "/profile.html";
+    return false;
+  }
+
+  revealGatedContent();
+  return true;
+}
+
 export function isAdmin() {
   return currentProfile?.role === "admin";
+}
+
+// NEW
+export function isWriter() {
+  return (
+    (currentProfile?.role === "writer" || currentProfile?.role === "admin") &&
+    !currentProfile?.suspended
+  );
 }
 
 // ── Nav render ──
@@ -111,6 +165,7 @@ function renderNav() {
   if (currentUser) {
     right.innerHTML = `
       <a href="/profile.html" class="nav-username" title="View profile">${escapeHtml(currentProfile?.username ?? currentUser.email)}</a>
+      ${isWriter() ? `<a href="/write/" class="btn-nav gold">Write</a>` : ""}
       ${isAdmin() ? `<a href="/admin/" class="btn-nav gold">Admin</a>` : ""}
       <a href="/my-library.html" class="btn-nav">My Library</a>
       <button class="btn-nav" onclick="signOut()">Sign out</button>`;
@@ -207,6 +262,24 @@ export function confirm(title, msg) {
     document.getElementById("confirm-yes").onclick = () => done(true);
     document.getElementById("confirm-no").onclick = () => done(false);
   });
+}
+
+// NEW — call one of the v2.0 Edge Functions with the signed-in user's
+// own access token attached. Used by the Stripe connect flow and the
+// donate widget.
+export async function callFunction(name, body) {
+  const {
+    data: { session },
+  } = await db.auth.getSession();
+  const res = await fetch(`${db.supabaseUrl}/functions/v1/${name}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return res.json();
 }
 
 // ── Helpers ──

@@ -239,6 +239,9 @@
           </button>
         </div>
 
+        <!-- Writer/Author status -->
+        <div class="card fade-up" id="writer-status-card" style="padding: 1.75rem 2rem; margin-bottom: 2rem"></div>
+
         <!-- Reading stats -->
         <div class="lib-section fade-up">
           <div class="lib-section-head">
@@ -271,7 +274,7 @@
 
     <script type="module">
       import db from "/js/supabase.js";
-      import { requireAuth, toast, escapeHtml } from "/js/app.js";
+      import { requireAuth, toast, escapeHtml, refreshProfile } from "/js/app.js";
 
       if (!(await requireAuth())) throw new Error("Not authenticated");
       const { currentUser, currentProfile } = await import("/js/app.js");
@@ -435,6 +438,56 @@
       renderHeader();
       loadStats();
       loadCommentHistory();
+      loadWriterStatus();
+
+      async function loadWriterStatus() {
+        const profile = await refreshProfile(); // bypasses the localStorage cache
+        const card = document.getElementById("writer-status-card");
+
+        if (profile?.role === "writer" || profile?.role === "admin") {
+          card.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div>
+          <div class="edit-card-head" style="margin-bottom:.3rem"><i class="ti ti-feather" style="color:var(--gold)"></i> Writer/Author</div>
+          <p style="color:var(--text2);font-size:.85rem">Publishing as <strong style="color:var(--text)">${escapeHtml(profile.pen_name ?? profile.username)}</strong></p>
+        </div>
+        <a href="/write/" class="btn btn-primary"><i class="ti ti-pencil"></i> Write Dashboard</a>
+      </div>`;
+          return;
+        }
+
+        const { data: app } = await db
+          .from("writer_applications")
+          .select("status, applied_at")
+          .eq("user_id", currentUser.id)
+          .order("applied_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!app) {
+          card.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div>
+          <div class="edit-card-head" style="margin-bottom:.3rem">Writer/Author Program</div>
+          <p style="color:var(--text2);font-size:.85rem">Want to publish your own novels here?</p>
+        </div>
+        <a href="/apply-writer.html" class="btn"><i class="ti ti-send"></i> Apply to Write</a>
+      </div>`;
+        } else if (app.status === "pending") {
+          card.innerHTML = `
+      <div class="edit-card-head" style="margin-bottom:.3rem"><i class="ti ti-hourglass" style="color:var(--gold)"></i> Application Pending</div>
+      <p style="color:var(--text2);font-size:.85rem">Submitted ${new Date(app.applied_at).toLocaleDateString()} — under review.</p>`;
+        } else if (app.status === "rejected") {
+          card.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div>
+          <div class="edit-card-head" style="margin-bottom:.3rem">Application Not Approved</div>
+          <p style="color:var(--text2);font-size:.85rem">This round didn't work out — you're welcome to apply again any time.</p>
+        </div>
+        <a href="/apply-writer.html" class="btn"><i class="ti ti-refresh"></i> Reapply</a>
+      </div>`;
+        }
+      }
     </script>
   </body>
 </html>

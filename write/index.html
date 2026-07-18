@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Write Dashboard</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Write</div>
+      <a href="/write/" class="sidebar-link active"><i class="ti ti-layout-dashboard"></i>Dashboard & Books</a>
+      <a href="/write/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>My Reading Order</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/write/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments & Reviews</a>
+      <a href="/write/reports.html" class="sidebar-link"><i class="ti ti-flag"></i>Reports</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/write/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/write/earnings.html" class="sidebar-link"><i class="ti ti-currency-dollar"></i>Earnings</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+    </div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header">
+      <div>
+        <h1>Write Dashboard</h1>
+        <p id="welcome-line">Your books, at a glance.</p>
+      </div>
+      <button class="btn btn-primary" onclick="location.href='/write/edit-book.html'"><i class="ti ti-plus"></i> New Book</button>
+    </div>
+
+    <div id="invites-section" style="display:none;margin-bottom:2rem">
+      <h3 style="font-size:.95rem;margin-bottom:.75rem"><i class="ti ti-mail" style="color:var(--gold)"></i> Co-author invites</h3>
+      <div id="invites-list"></div>
+    </div>
+
+    <div id="books-section"></div>
+  </main>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { requireWriter, currentUser, currentProfile, toast, confirm, escapeHtml } from '../js/app.js';
+
+if (!await requireWriter()) throw new Error('Not a Writer');
+
+document.getElementById('welcome-line').textContent =
+  `Publishing as ${currentProfile.pen_name ?? currentProfile.username}.`;
+
+async function loadInvites() {
+  const { data } = await db.from('book_authors')
+    .select('id, invited_at, books(id, title)')
+    .eq('user_id', currentUser.id)
+    .eq('status', 'invited');
+
+  if (!data?.length) return;
+
+  document.getElementById('invites-section').style.display = 'block';
+  document.getElementById('invites-list').innerHTML = data.map(inv => `
+    <div class="card" style="padding:1rem 1.5rem;margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      <div>Co-author invite for <strong>${escapeHtml(inv.books?.title ?? 'Untitled')}</strong></div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-sm badge-green" onclick="acceptInvite('${inv.id}')"><i class="ti ti-check"></i> Accept</button>
+        <button class="btn btn-sm btn-danger" onclick="declineInvite('${inv.id}')"><i class="ti ti-x"></i> Decline</button>
+      </div>
+    </div>`).join('');
+}
+
+window.acceptInvite = async (id) => {
+  const { error } = await db.from('book_authors').update({ status: 'accepted', accepted_at: new Date().toISOString() }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Invite accepted!', 'success');
+  loadInvites(); loadBooks();
+};
+
+window.declineInvite = async (id) => {
+  const ok = await confirm('Decline this invite?', 'You can be invited again later if the author changes their mind.');
+  if (!ok) return;
+  const { error } = await db.from('book_authors').delete().eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Invite declined');
+  loadInvites();
+};
+
+async function loadBooks() {
+  const { data } = await db.from('book_authors')
+    .select('book_id, status, books(id, title, genre, published, cover_url, symbol, color, created_by, volumes(id, chapters(id)))')
+    .eq('user_id', currentUser.id)
+    .eq('status', 'accepted');
+
+  const section = document.getElementById('books-section');
+  if (!data?.length) {
+    section.innerHTML = `<div class="empty card" style="padding:3rem"><div class="empty-icon">\ud83d\udcda</div><p>No books yet. Click <strong>New Book</strong> to start your first one.</p></div>`;
+    return;
+  }
+
+  section.innerHTML = `<div class="card" style="overflow:hidden"><table class="admin-table">
+    <thead><tr><th>Cover</th><th>Title</th><th>Genre</th><th>Chapters</th><th>Status</th><th>Your Role</th><th></th></tr></thead>
+    <tbody>${data.map(row => {
+      const b = row.books;
+      const chCount = b.volumes?.reduce((s, v) => s + (v.chapters?.length ?? 0), 0) ?? 0;
+      return `<tr>
+        <td><div style="width:32px;height:48px;background:${b.color||'#111114'};border:1px solid var(--border);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:1rem">
+          ${b.cover_url ? `<img src="${b.cover_url}" style="width:100%;height:100%;object-fit:cover;border-radius:2px">` : (b.symbol||'\u2726')}
+        </div></td>
+        <td class="td-title">${escapeHtml(b.title)}</td>
+        <td><span class="badge">${escapeHtml(b.genre||'')}</span></td>
+        <td>${chCount}</td>
+        <td><span class="badge ${b.published?'badge-green':'badge-red'}">${b.published?'Live':'Draft'}</span></td>
+        <td style="font-size:.75rem;color:var(--text2)">${b.created_by === currentUser.id ? 'Creator' : 'Co-author'}</td>
+        <td class="td-actions">
+          <a href="/write/volumes.html?book=${b.id}" class="btn btn-sm"><i class="ti ti-list"></i> Volumes</a>
+          <a href="/write/edit-book.html?id=${b.id}" class="btn btn-sm"><i class="ti ti-pencil"></i></a>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+loadInvites();
+loadBooks();
+</script>
+</body>
+</html>

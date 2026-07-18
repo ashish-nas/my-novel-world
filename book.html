@@ -669,6 +669,7 @@
             <div>
               <p class="book-genre-tag" id="book-genre">Loading</p>
               <h1 class="book-title-hero" id="book-title">Loading...</h1>
+              <p class="book-byline" id="book-byline" style="color: var(--text2); font-size: .85rem; margin-top: -0.5rem; margin-bottom: 1rem"></p>
               <p class="book-description" id="book-description"></p>
 
               <div
@@ -906,6 +907,33 @@
         Adventure: "#0a1008",
       };
 
+      // ── Author byline (pen names of accepted co-authors) + Support link,
+      // which follows the book's original creator on a co-authored book —
+      // see design doc v2.0 §4.6 for why. ──
+      async function loadByline(bookId) {
+        const { data } = await db
+          .from("book_authors")
+          .select("user_id, profiles(pen_name)")
+          .eq("book_id", bookId)
+          .eq("status", "accepted");
+
+        const names = (data ?? []).map((a) => a.profiles?.pen_name).filter(Boolean);
+        const text = names.length ? names.join(" & ") : "My Novel World";
+
+        const creatorId = data?.[0]?.user_id;
+        const { data: creatorProfile } = creatorId
+          ? await db.from("profiles").select("id, stripe_charges_enabled").eq("id", creatorId).single()
+          : { data: null };
+
+        let html = names.length ? `by ${names.map((n) => escapeHtml(n)).join(" &amp; ")}` : "";
+
+        if (creatorProfile?.stripe_charges_enabled) {
+          html += ` <a href="/author.html?id=${creatorProfile.id}#support" style="color:var(--gold);margin-left:.5rem"><i class="ti ti-heart"></i> Support</a>`;
+        }
+
+        return { text, html };
+      }
+
       // ── Load book ──
       async function loadBook() {
         const { data, error } = await db
@@ -931,11 +959,16 @@
         const bg = data.color || GENRE_COLORS[data.genre] || "#111114";
         const coverEl = document.getElementById("book-cover");
         coverEl.style.background = bg;
+
+        const byline = await loadByline(data.id);
+
         coverEl.innerHTML = data.cover_url
-          ? `<img src="${data.cover_url}" alt="${data.title}"><div class="book-cover-large-overlay"></div><div class="cover-author-large">MY NOVEL WORLD</div>`
+          ? `<img src="${data.cover_url}" alt="${data.title}"><div class="book-cover-large-overlay"></div><div class="cover-author-large">${byline.text}</div>`
           : `<div class="cover-symbol-large">${data.symbol || "✦"}</div>
        <div class="cover-title-large">${data.title}</div>
-       <div class="cover-author-large">MY NOVEL WORLD</div>`;
+       <div class="cover-author-large">${byline.text}</div>`;
+
+        document.getElementById("book-byline").innerHTML = byline.html;
 
         document.getElementById("hero-bg").style.background = bg;
         document.getElementById("book-genre").textContent = data.genre || "";

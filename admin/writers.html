@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Writers — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Content</div>
+      <a href="/admin/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+      <a href="/admin/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>Reading Order</a>
+      <a href="/admin/posts.html" class="sidebar-link"><i class="ti ti-speakerphone"></i>Updates</a>
+      <a href="/admin/countdown.html" class="sidebar-link"><i class="ti ti-hourglass"></i>Countdown</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Writer/Author Program</div>
+      <a href="/admin/writer-applications.html" class="sidebar-link"><i class="ti ti-file-description"></i>Applications</a>
+      <a href="/admin/writers.html" class="sidebar-link active"><i class="ti ti-feather"></i>Writers</a>
+      <a href="/admin/reports.html" class="sidebar-link"><i class="ti ti-flag"></i>Reports</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/admin/qa.html" class="sidebar-link"><i class="ti ti-question-mark"></i>Q&A</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/admin/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/admin/writing.html" class="sidebar-link"><i class="ti ti-pencil"></i>Writing Tracker</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+      <a href="/write/" class="sidebar-link"><i class="ti ti-feather"></i>My Write Dashboard</a>
+    </div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header">
+      <div>
+        <h1>Writers</h1>
+        <p>Every approved Writer/Author. Suspending is an emergency lever, not routine moderation — it auto-unpublishes their solely-authored books.</p>
+      </div>
+    </div>
+
+    <div class="card" style="overflow:hidden">
+      <table class="admin-table">
+        <thead><tr><th>Pen Name</th><th>Username</th><th>Books</th><th>Status</th><th></th></tr></thead>
+        <tbody id="writers-body">
+          <tr><td colspan="5"><div class="empty"><div class="empty-icon">\ud83e\udeb6</div><p>Loading...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- SUSPEND MODAL -->
+<div class="overlay" id="suspend-modal">
+  <div class="dialog" style="max-width:480px;text-align:left">
+    <h3>Suspend Writer</h3>
+    <div style="margin-top:1.25rem">
+      <div class="form-group">
+        <label class="form-label">Reason (internal only, not shown publicly)</label>
+        <textarea id="s-reason" class="form-input" rows="3" placeholder="e.g. Repeated copyright complaints, unresolved"></textarea>
+      </div>
+    </div>
+    <div class="dialog-btns mt-3">
+      <button class="btn btn-danger" onclick="confirmSuspend()">Suspend</button>
+      <button class="btn" onclick="document.getElementById('suspend-modal').classList.remove('show')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { requireAdmin, toast, confirm, escapeHtml } from '../js/app.js';
+
+if (!await requireAdmin()) throw new Error('Not admin');
+
+let suspendTargetId = null;
+
+async function loadWriters() {
+  const { data, error } = await db
+    .from('profiles')
+    .select('id, username, pen_name, suspended, suspended_reason, book_authors(book_id)')
+    .in('role', ['writer', 'admin'])
+    .order('pen_name');
+
+  const body = document.getElementById('writers-body');
+
+  if (error) {
+    body.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">\u26a0</div><p>${escapeHtml(error.message)}</p></div></td></tr>`;
+    return;
+  }
+
+  if (!data?.length) {
+    body.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">\ud83e\udeb6</div><p>No approved Writers yet.</p></div></td></tr>`;
+    return;
+  }
+
+  body.innerHTML = data.map(w => `
+    <tr>
+      <td class="td-title">${escapeHtml(w.pen_name ?? '\u2014')}</td>
+      <td style="color:var(--text2)">@${escapeHtml(w.username)}</td>
+      <td>${w.book_authors?.length ?? 0}</td>
+      <td>
+        <span class="badge ${w.suspended ? 'badge-red' : 'badge-green'}">${w.suspended ? 'Suspended' : 'Active'}</span>
+        ${w.suspended && w.suspended_reason ? `<div style="font-size:.7rem;color:var(--text3);margin-top:.2rem">${escapeHtml(w.suspended_reason)}</div>` : ''}
+      </td>
+      <td class="td-actions">
+        <a href="/author.html?id=${w.id}" class="btn btn-sm" target="_blank"><i class="ti ti-external-link"></i></a>
+        ${w.suspended
+          ? `<button class="btn btn-sm badge-green" onclick="reinstate('${w.id}')"><i class="ti ti-rotate"></i> Reinstate</button>`
+          : `<button class="btn btn-sm btn-danger" onclick="openSuspend('${w.id}')"><i class="ti ti-ban"></i> Suspend</button>`}
+      </td>
+    </tr>`).join('');
+}
+
+window.openSuspend = (id) => {
+  suspendTargetId = id;
+  document.getElementById('s-reason').value = '';
+  document.getElementById('suspend-modal').classList.add('show');
+};
+
+window.confirmSuspend = async () => {
+  const reason = document.getElementById('s-reason').value.trim();
+  const { error } = await db.rpc('suspend_writer', { target_user_id: suspendTargetId, reason });
+  document.getElementById('suspend-modal').classList.remove('show');
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Writer suspended');
+  loadWriters();
+};
+
+window.reinstate = async (id) => {
+  const ok = await confirm('Reinstate this Writer?', 'They regain full independent publishing control immediately. Their previously-unpublished solely-authored books stay unpublished until they republish manually.');
+  if (!ok) return;
+  const { error } = await db.rpc('reinstate_writer', { target_user_id: id });
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Writer reinstated', 'success');
+  loadWriters();
+};
+
+loadWriters();
+</script>
+</body>
+</html>

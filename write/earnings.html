@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Earnings — Write</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+<nav class="nav"><span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span><div id="nav-right" class="nav-right"></div></nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Write</div>
+      <a href="/write/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard & Books</a>
+      <a href="/write/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>My Reading Order</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/write/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments & Reviews</a>
+      <a href="/write/reports.html" class="sidebar-link"><i class="ti ti-flag"></i>Reports</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/write/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/write/earnings.html" class="sidebar-link active"><i class="ti ti-currency-dollar"></i>Earnings</a>
+    </div>
+    <div class="sidebar-section"><div class="sidebar-label">Site</div><a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a></div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header"><div><h1>Earnings</h1><p>Reader donations, minus the platform's 5% fee and Stripe's own processing fee.</p></div></div>
+
+    <div class="card" id="stripe-status-card" style="padding:1.75rem 2rem;margin-bottom:2rem"></div>
+
+    <div class="metric-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2rem">
+      <div class="card" style="padding:1.25rem"><div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">Total Raised</div><div id="m-total" style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:var(--gold)">\u2013</div></div>
+      <div class="card" style="padding:1.25rem"><div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">Supporters</div><div id="m-supporters" style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:var(--gold)">\u2013</div></div>
+      <div class="card" style="padding:1.25rem"><div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">Platform Fee Paid</div><div id="m-fees" style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:var(--text2)">\u2013</div></div>
+    </div>
+
+    <h3 style="margin-bottom:.75rem;font-size:.95rem">By Book</h3>
+    <div class="card" style="overflow:hidden">
+      <table class="admin-table">
+        <thead><tr><th>Book</th><th>Donations</th><th>Raised</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { requireWriter, currentUser, currentProfile, callFunction, toast, escapeHtml } from '../js/app.js';
+
+if (!await requireWriter()) throw new Error('Not a Writer');
+
+const money = (cents) => '$' + (cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function renderStripeStatus() {
+  const card = document.getElementById('stripe-status-card');
+  if (currentProfile.stripe_charges_enabled) {
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div><i class="ti ti-circle-check" style="color:#4a9c6d"></i> <strong>Stripe connected</strong> \u2014 your Support button is live.</div>
+        <button class="btn btn-sm" onclick="openStripe()">Manage on Stripe</button>
+      </div>`;
+  } else if (currentProfile.stripe_account_id) {
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div><i class="ti ti-clock" style="color:var(--gold)"></i> Stripe onboarding started but not finished \u2014 your Support button isn't live yet.</div>
+        <button class="btn btn-primary btn-sm" onclick="openStripe()">Finish Setup</button>
+      </div>`;
+  } else {
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div>
+          <strong>Donations aren't set up yet.</strong>
+          <p style="color:var(--text2);font-size:.82rem;margin-top:.3rem;max-width:480px">
+            Connect Stripe to let readers support you directly. You'll verify your identity and bank details
+            with Stripe (not us) \u2014 takes a few minutes. Note: this requires being in a
+            <a href="https://stripe.com/global" target="_blank" rel="noopener" style="color:var(--gold)">Stripe-supported country</a>.
+          </p>
+        </div>
+        <button class="btn btn-primary" onclick="openStripe()"><i class="ti ti-brand-stripe"></i> Connect Stripe</button>
+      </div>`;
+  }
+}
+
+window.openStripe = async () => {
+  const json = await callFunction('create-connect-account');
+  if (json.url) location.href = json.url;
+  else toast('Error: ' + (json.error ?? 'unknown'), 'error');
+};
+
+async function loadEarnings() {
+  const { data, error } = await db.from('donations')
+    .select('amount_cents, platform_fee_cents, book_id, donor_id, books(title)')
+    .eq('writer_id', currentUser.id).eq('status', 'succeeded');
+
+  if (error) { toast('Error loading earnings: ' + error.message, 'error'); return; }
+
+  const total = (data ?? []).reduce((s, d) => s + d.amount_cents, 0);
+  const fees = (data ?? []).reduce((s, d) => s + d.platform_fee_cents, 0);
+  const supporters = new Set((data ?? []).map(d => d.donor_id)).size;
+
+  document.getElementById('m-total').textContent = money(total - fees);
+  document.getElementById('m-supporters').textContent = supporters;
+  document.getElementById('m-fees').textContent = money(fees);
+
+  const byBook = {};
+  (data ?? []).forEach(d => {
+    const key = d.book_id ?? 'general';
+    if (!byBook[key]) byBook[key] = { title: d.books?.title ?? 'General support', count: 0, total: 0 };
+    byBook[key].count++;
+    byBook[key].total += d.amount_cents - d.platform_fee_cents;
+  });
+
+  const rows = Object.values(byBook).sort((a, b) => b.total - a.total);
+  document.getElementById('rows').innerHTML = rows.length
+    ? rows.map(r => `<tr><td class="td-title">${escapeHtml(r.title)}</td><td>${r.count}</td><td>${money(r.total)}</td></tr>`).join('')
+    : `<tr><td colspan="3"><div class="empty"><p>No donations yet.</p></div></td></tr>`;
+}
+
+renderStripeStatus();
+loadEarnings();
+</script>
+</body>
+</html>

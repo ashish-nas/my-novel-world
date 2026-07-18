@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Book — Write</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Write</div>
+      <a href="/write/" class="sidebar-link active"><i class="ti ti-layout-dashboard"></i>Dashboard & Books</a>
+      <a href="/write/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>My Reading Order</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/write/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments & Reviews</a>
+      <a href="/write/reports.html" class="sidebar-link"><i class="ti ti-flag"></i>Reports</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/write/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/write/earnings.html" class="sidebar-link"><i class="ti ti-currency-dollar"></i>Earnings</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+    </div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-breadcrumb"><a href="/write/">Dashboard</a><span class="sep">\u203a</span><span id="bc">New Book</span></div>
+
+    <div class="admin-header"><div><h1 id="page-title">New Book</h1><p>Title, description, and cover.</p></div></div>
+
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input id="b-title" class="form-input" placeholder="e.g. Shadows of Aether">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Genre</label>
+        <select id="b-genre" class="form-input">
+          <option>Fantasy</option><option>Romance</option><option>Thriller</option>
+          <option>Mystery</option><option>Sci-Fi</option><option>Drama</option>
+          <option>Horror</option><option>Adventure</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cover Symbol</label>
+        <input id="b-symbol" class="form-input" placeholder="\u2726" maxlength="4">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea id="b-desc" class="form-input" rows="3" placeholder="A short blurb shown on the book card..."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Cover Image URL</label>
+        <input id="b-cover" class="form-input" placeholder="https://res.cloudinary.com/...">
+        <div class="form-hint">Upload to Cloudinary and paste the URL here</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cover Background Color</label>
+        <input id="b-color" class="form-input" placeholder="#111114">
+      </div>
+    </div>
+    <div class="toggle-wrap mt-2">
+      <label class="toggle"><input type="checkbox" id="b-published"><span class="toggle-slider"></span></label>
+      <span class="toggle-label">Published \u2014 visible to readers</span>
+    </div>
+
+    <button class="btn btn-primary mt-3" onclick="saveBook()"><i class="ti ti-device-floppy"></i> Save Book</button>
+
+    <!-- CO-AUTHORS — creator only -->
+    <div id="coauthor-section" style="display:none;margin-top:3rem;border-top:1px solid var(--border);padding-top:2rem">
+      <h3 style="margin-bottom:.25rem">Co-Authors</h3>
+      <p style="color:var(--text2);font-size:.82rem;margin-bottom:1.25rem">Only you, as the creator, can invite or remove co-authors. Everyone listed here has equal editing rights on this book's content.</p>
+      <div id="coauthor-list" style="margin-bottom:1.25rem"></div>
+      <div class="form-row" style="align-items:flex-end">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Invite by pen name</label>
+          <input id="invite-pen-name" class="form-input" placeholder="Exact pen name of an approved Writer">
+        </div>
+        <button class="btn" onclick="inviteCoAuthor()" style="margin-bottom:1.1rem"><i class="ti ti-user-plus"></i> Invite</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { requireWriter, currentUser, toast, confirm, escapeHtml } from '../js/app.js';
+
+if (!await requireWriter()) throw new Error('Not a Writer');
+
+const params = new URLSearchParams(location.search);
+const bookId = params.get('id');
+let isCreator = true; // true by default for a brand-new book
+
+if (bookId) {
+  const { data, error } = await db.from('books').select('*').eq('id', bookId).single();
+  if (error || !data) { toast('Book not found', 'error'); location.href = '/write/'; }
+
+  isCreator = data.created_by === currentUser.id;
+
+  document.getElementById('bc').textContent = data.title;
+  document.getElementById('page-title').textContent = 'Edit: ' + data.title;
+  document.getElementById('b-title').value = data.title;
+  document.getElementById('b-genre').value = data.genre ?? 'Fantasy';
+  document.getElementById('b-desc').value = data.description ?? '';
+  document.getElementById('b-cover').value = data.cover_url ?? '';
+  document.getElementById('b-symbol').value = data.symbol ?? '\u2726';
+  document.getElementById('b-color').value = data.color ?? '#111114';
+  document.getElementById('b-published').checked = data.published;
+
+  if (isCreator) {
+    document.getElementById('coauthor-section').style.display = 'block';
+    loadCoAuthors();
+  }
+}
+
+async function loadCoAuthors() {
+  const { data } = await db.from('book_authors')
+    .select('id, status, user_id, profiles(pen_name, username)')
+    .eq('book_id', bookId);
+
+  const list = document.getElementById('coauthor-list');
+  if (!data?.length) { list.innerHTML = `<p style="color:var(--text3);font-size:.82rem">Just you, so far.</p>`; return; }
+
+  list.innerHTML = data.map(ca => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:.5px solid var(--border)">
+      <div>
+        ${escapeHtml(ca.profiles?.pen_name ?? ca.profiles?.username ?? 'Unknown')}
+        <span class="badge ${ca.status==='accepted'?'badge-green':'badge-gold'}" style="font-size:.45rem;margin-left:.4rem">${ca.status}</span>
+        ${ca.user_id === currentUser.id ? ' <span style="color:var(--text3);font-size:.75rem">(you, creator)</span>' : ''}
+      </div>
+      ${ca.user_id !== currentUser.id ? `<button class="btn btn-sm btn-danger" onclick="removeCoAuthor('${ca.id}')"><i class="ti ti-x"></i></button>` : ''}
+    </div>`).join('');
+}
+
+window.inviteCoAuthor = async () => {
+  const penName = document.getElementById('invite-pen-name').value.trim();
+  if (!penName) { toast('Enter a pen name', 'error'); return; }
+
+  const { data: writer } = await db.from('profiles').select('id').eq('pen_name', penName).in('role', ['writer','admin']).maybeSingle();
+  if (!writer) { toast('No approved Writer with that exact pen name', 'error'); return; }
+
+  const { error } = await db.from('book_authors').insert({ book_id: bookId, user_id: writer.id, status: 'invited' });
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+
+  toast('Invite sent', 'success');
+  document.getElementById('invite-pen-name').value = '';
+  loadCoAuthors();
+};
+
+window.removeCoAuthor = async (id) => {
+  const ok = await confirm('Remove this co-author?', 'They lose editing access to this book immediately.');
+  if (!ok) return;
+  const { error } = await db.from('book_authors').delete().eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Co-author removed');
+  loadCoAuthors();
+};
+
+window.saveBook = async () => {
+  const title = document.getElementById('b-title').value.trim();
+  if (!title) { toast('Please enter a title', 'error'); return; }
+
+  const slug = title.toLowerCase().trim().replace(/[^\w\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-');
+
+  const payload = {
+    title, slug,
+    genre: document.getElementById('b-genre').value,
+    description: document.getElementById('b-desc').value.trim(),
+    cover_url: document.getElementById('b-cover').value.trim() || null,
+    symbol: document.getElementById('b-symbol').value.trim() || '\u2726',
+    color: document.getElementById('b-color').value.trim() || '#111114',
+    published: document.getElementById('b-published').checked,
+  };
+
+  if (bookId) {
+    const { error } = await db.from('books').update(payload).eq('id', bookId);
+    if (error) { toast('Error: ' + error.message, 'error'); return; }
+    toast('Book updated!', 'success');
+  } else {
+    payload.created_by = currentUser.id;
+    const { data, error } = await db.from('books').insert(payload).select().single();
+    if (error) { toast('Error: ' + error.message, 'error'); return; }
+    // You are automatically your own first (accepted) author. If this
+    // specific insert fails, the book exists but nobody (including you)
+    // can edit it — every content policy checks book_authors — so this
+    // gets its own explicit error rather than being treated as optional.
+    const { error: authorErr } = await db.from('book_authors').insert({ book_id: data.id, user_id: currentUser.id, status: 'accepted', accepted_at: new Date().toISOString() });
+    if (authorErr) {
+      toast('Book was created, but setting you as its author failed: ' + authorErr.message + ' — contact admin', 'error');
+      return;
+    }
+    toast('Book created!', 'success');
+    history.replaceState(null, '', `/write/edit-book.html?id=${data.id}`);
+    setTimeout(() => location.reload(), 700);
+    return;
+  }
+};
+</script>
+</body>
+</html>

@@ -435,14 +435,14 @@
 
       // ── Reading Goals & Streak ──
       async function loadGoal() {
-        let { data: goal } = await db
+        let { data: goal, error } = await db
           .from("reading_goals")
           .select("*")
           .eq("user_id", currentUser.id)
           .single();
 
         if (!goal) {
-          const { data: created } = await db
+          const { data: created, error: insertErr } = await db
             .from("reading_goals")
             .insert({
               user_id: currentUser.id,
@@ -452,6 +452,11 @@
             })
             .select()
             .single();
+          if (insertErr) {
+            console.error("Reading goal setup failed:", insertErr.message);
+            renderGoal(null, 0);
+            return;
+          }
           goal = created;
         }
 
@@ -466,6 +471,14 @@
       }
 
       function renderGoal(goal, weekCount) {
+        // Graceful fallback instead of crashing if goal setup failed above
+        if (!goal) {
+          document.getElementById("streak-num").textContent = "\u2013";
+          document.getElementById("goal-progress-text").textContent =
+            "Couldn't load your goal \u2014 try refreshing";
+          document.getElementById("goal-bar-fill").style.width = "0%";
+          return;
+        }
         const target = goal.weekly_target || 3;
         document.getElementById("streak-num").textContent =
           goal.current_streak ?? 0;

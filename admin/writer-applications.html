@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Writer Applications — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  .filter-tabs { display: flex; gap: 0.6rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .filter-tabs .btn { position: relative; }
+  .filter-count { display: inline-block; margin-left: 0.4rem; font-size: 0.7rem; opacity: 0.75; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Content</div>
+      <a href="/admin/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+      <a href="/admin/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>Reading Order</a>
+      <a href="/admin/posts.html" class="sidebar-link"><i class="ti ti-speakerphone"></i>Updates</a>
+      <a href="/admin/countdown.html" class="sidebar-link"><i class="ti ti-hourglass"></i>Countdown</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Writer/Author Program</div>
+      <a href="/admin/writer-applications.html" class="sidebar-link active"><i class="ti ti-file-description"></i>Applications</a>
+      <a href="/admin/writers.html" class="sidebar-link"><i class="ti ti-feather"></i>Writers</a>
+      <a href="/admin/reports.html" class="sidebar-link"><i class="ti ti-flag"></i>Reports</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/admin/qa.html" class="sidebar-link"><i class="ti ti-question-mark"></i>Q&A</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/admin/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/admin/writing.html" class="sidebar-link"><i class="ti ti-pencil"></i>Writing Tracker</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+      <a href="/write/" class="sidebar-link"><i class="ti ti-feather"></i>My Write Dashboard</a>
+    </div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header">
+      <div>
+        <h1>Writer Applications</h1>
+        <p>Review each application individually — approving sets their role and pen name immediately.</p>
+      </div>
+    </div>
+
+    <div class="filter-tabs" id="filter-tabs" style="display:flex;gap:.6rem;margin-bottom:1.5rem;flex-wrap:wrap">
+      <button class="btn btn-primary" data-filter="pending" onclick="setFilter('pending')">Pending<span class="filter-count" id="count-pending"></span></button>
+      <button class="btn" data-filter="approved" onclick="setFilter('approved')">Approved</button>
+      <button class="btn" data-filter="rejected" onclick="setFilter('rejected')">Rejected</button>
+      <button class="btn" data-filter="all" onclick="setFilter('all')">All</button>
+    </div>
+
+    <div id="app-list"></div>
+  </main>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { requireAdmin, toast, confirm, escapeHtml } from '../js/app.js';
+
+if (!await requireAdmin()) throw new Error('Not admin');
+
+let currentFilter = 'pending';
+
+window.setFilter = (f) => {
+  currentFilter = f;
+  document.querySelectorAll('#filter-tabs button').forEach(b => b.classList.toggle('btn-primary', b.dataset.filter === f));
+  loadApps();
+};
+
+async function loadCount() {
+  const { count } = await db.from('writer_applications').select('id', { count: 'exact', head: true }).eq('status', 'pending');
+  document.getElementById('count-pending').textContent = count ? ` (${count})` : '';
+}
+
+async function loadApps() {
+  let query = db.from('writer_applications')
+    .select('id, pitch, pen_name, bio, sample_url, status, applied_at, profiles(username, created_at)')
+    .order('applied_at', { ascending: false });
+
+  if (currentFilter !== 'all') query = query.eq('status', currentFilter);
+
+  const { data, error } = await query;
+  const list = document.getElementById('app-list');
+
+  if (error) {
+    list.innerHTML = `<div class="empty card" style="padding:3rem"><div class="empty-icon">\u26a0</div><p>Couldn't load applications: ${escapeHtml(error.message)}</p></div>`;
+    return;
+  }
+
+  if (!data?.length) {
+    list.innerHTML = `<div class="empty card" style="padding:3rem"><div class="empty-icon">\ud83d\udcdd</div><p>No ${currentFilter === 'all' ? '' : currentFilter} applications.</p></div>`;
+    return;
+  }
+
+  list.innerHTML = data.map(a => `
+    <div class="card" style="margin-bottom:1rem;padding:1.5rem 1.75rem">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:260px">
+          <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.3rem">
+            <span style="font-family:'Cormorant Garamond',serif;font-size:1.2rem">${escapeHtml(a.pen_name)}</span>
+            <span class="badge ${a.status==='pending'?'badge-gold':a.status==='approved'?'badge-green':'badge-red'}" style="font-size:.48rem">${a.status}</span>
+          </div>
+          <div style="font-size:.75rem;color:var(--text3);margin-bottom:.75rem">
+            @${escapeHtml(a.profiles?.username ?? 'unknown')} \u00b7 applied ${new Date(a.applied_at).toLocaleDateString()}
+          </div>
+          <p style="font-size:.85rem;color:var(--text2);margin-bottom:.5rem"><strong style="color:var(--text)">Bio:</strong> ${escapeHtml(a.bio || '\u2014')}</p>
+          <p style="font-size:.85rem;color:var(--text2);margin-bottom:.5rem"><strong style="color:var(--text)">Pitch:</strong> ${escapeHtml(a.pitch)}</p>
+          ${a.sample_url ? `<p style="font-size:.85rem"><strong style="color:var(--text)">Sample:</strong> <a href="${escapeHtml(a.sample_url)}" target="_blank" rel="noopener" style="color:var(--gold)">${escapeHtml(a.sample_url)}</a></p>` : ''}
+        </div>
+        ${a.status === 'pending' ? `
+        <div style="display:flex;flex-direction:column;gap:.5rem">
+          <button class="btn btn-sm badge-green" onclick="approveApp('${a.id}')"><i class="ti ti-check"></i> Approve</button>
+          <button class="btn btn-sm btn-danger" onclick="rejectApp('${a.id}')"><i class="ti ti-x"></i> Reject</button>
+        </div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+window.approveApp = async (id) => {
+  const ok = await confirm('Approve this Writer?', 'Their role becomes Writer/Author immediately, using the pen name and bio from their application.');
+  if (!ok) return;
+  const { error } = await db.rpc('approve_writer_application', { application_id: id });
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Writer approved!', 'success');
+  loadCount(); loadApps();
+};
+
+window.rejectApp = async (id) => {
+  const ok = await confirm('Reject this application?', 'They can reapply any time.');
+  if (!ok) return;
+  const { error } = await db.from('writer_applications').update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Application rejected');
+  loadCount(); loadApps();
+};
+
+loadCount();
+loadApps();
+</script>
+</body>
+</html>

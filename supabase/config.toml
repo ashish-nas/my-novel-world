@@ -418,3 +418,12 @@ verify_jwt = false
 
 [functions.unsubscribe]
 verify_jwt = false
+
+[functions.create-connect-account]
+verify_jwt = true
+
+[functions.create-donation-checkout]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false

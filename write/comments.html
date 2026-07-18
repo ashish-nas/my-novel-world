@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comments & Reviews — Write</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+<nav class="nav"><span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span><div id="nav-right" class="nav-right"></div></nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Write</div>
+      <a href="/write/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard & Books</a>
+      <a href="/write/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>My Reading Order</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/write/comments.html" class="sidebar-link active"><i class="ti ti-message-dots"></i>Comments & Reviews</a>
+      <a href="/write/reports.html" class="sidebar-link"><i class="ti ti-flag"></i>Reports</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/write/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/write/earnings.html" class="sidebar-link"><i class="ti ti-currency-dollar"></i>Earnings</a>
+    </div>
+    <div class="sidebar-section"><div class="sidebar-label">Site</div><a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a></div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header"><div><h1>Comments & Reviews</h1><p>Only on your own books.</p></div></div>
+
+    <div class="filter-tabs" style="display:flex;gap:.6rem;margin-bottom:1.5rem">
+      <button class="btn btn-primary" data-t="comments" onclick="setTab('comments')">Comments</button>
+      <button class="btn" data-t="reviews" onclick="setTab('reviews')">Reviews</button>
+    </div>
+    <div id="list"></div>
+  </main>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { requireWriter, currentUser, toast, confirm, escapeHtml } from '../js/app.js';
+
+if (!await requireWriter()) throw new Error('Not a Writer');
+
+const { data: myBooks } = await db.from('book_authors').select('book_id').eq('user_id', currentUser.id).eq('status', 'accepted');
+const myBookIds = (myBooks ?? []).map(b => b.book_id);
+
+let tab = 'comments';
+window.setTab = (t) => {
+  tab = t;
+  document.querySelectorAll('.filter-tabs button').forEach(b => b.classList.toggle('btn-primary', b.dataset.t === t));
+  load();
+};
+
+async function load() {
+  const list = document.getElementById('list');
+  if (!myBookIds.length) { list.innerHTML = `<div class="empty card" style="padding:3rem"><p>No books yet.</p></div>`; return; }
+
+  if (tab === 'comments') {
+    const { data: chapters } = await db.from('chapters').select('id, title').in('book_id', myBookIds);
+    const chapterIds = (chapters ?? []).map(c => c.id);
+    const chMap = Object.fromEntries((chapters ?? []).map(c => [c.id, c.title]));
+
+    const { data, error } = chapterIds.length
+      ? await db.from('comments').select('id, content, approved, created_at, chapter_id, profiles(username)').in('chapter_id', chapterIds).order('created_at', { ascending: false })
+      : { data: [] };
+
+    if (error) { list.innerHTML = `<div class="empty card" style="padding:3rem"><p>${escapeHtml(error.message)}</p></div>`; return; }
+    if (!data?.length) { list.innerHTML = `<div class="empty card" style="padding:3rem"><div class="empty-icon">\ud83d\udcac</div><p>No comments yet.</p></div>`; return; }
+
+    list.innerHTML = `<div class="card" style="overflow:hidden"><table class="admin-table">
+      <thead><tr><th>Reader</th><th>Chapter</th><th>Comment</th><th>Status</th><th></th></tr></thead>
+      <tbody>${data.map(c => `
+        <tr>
+          <td>${escapeHtml(c.profiles?.username ?? 'unknown')}</td>
+          <td style="color:var(--text2)">${escapeHtml(chMap[c.chapter_id] ?? '')}</td>
+          <td style="max-width:340px;white-space:normal">${escapeHtml(c.content)}</td>
+          <td><span class="badge ${c.approved ? 'badge-green' : 'badge-gold'}">${c.approved ? 'Approved' : 'Pending'}</span></td>
+          <td class="td-actions">
+            ${!c.approved ? `<button class="btn btn-sm badge-green" onclick="approveComment('${c.id}')"><i class="ti ti-check"></i></button>` : ''}
+            <button class="btn btn-sm btn-danger" onclick="deleteComment('${c.id}')"><i class="ti ti-trash"></i></button>
+          </td>
+        </tr>`).join('')}</tbody>
+    </table></div>`;
+  } else {
+    const { data, error } = await db.from('reviews').select('id, content, rating, pinned, hidden, created_at, book_id, profiles(username), books(title)').in('book_id', myBookIds).order('created_at', { ascending: false });
+    if (error) { list.innerHTML = `<div class="empty card" style="padding:3rem"><p>${escapeHtml(error.message)}</p></div>`; return; }
+    if (!data?.length) { list.innerHTML = `<div class="empty card" style="padding:3rem"><div class="empty-icon">\u2b50</div><p>No reviews yet.</p></div>`; return; }
+
+    list.innerHTML = `<div class="card" style="overflow:hidden"><table class="admin-table">
+      <thead><tr><th>Reader</th><th>Book</th><th>Rating</th><th>Review</th><th></th></tr></thead>
+      <tbody>${data.map(r => `
+        <tr>
+          <td>${escapeHtml(r.profiles?.username ?? 'unknown')}</td>
+          <td style="color:var(--text2)">${escapeHtml(r.books?.title ?? '')}</td>
+          <td>${'\u2605'.repeat(r.rating)}${'\u2606'.repeat(5 - r.rating)}</td>
+          <td style="max-width:320px;white-space:normal">${escapeHtml(r.content ?? '')} ${r.hidden ? '<span class="badge badge-red" style="font-size:.45rem">hidden</span>' : ''} ${r.pinned ? '<span class="badge badge-gold" style="font-size:.45rem">pinned</span>' : ''}</td>
+          <td class="td-actions">
+            <button class="btn btn-sm" onclick="togglePin('${r.id}', ${!r.pinned})"><i class="ti ti-pin"></i></button>
+            <button class="btn btn-sm ${r.hidden ? 'badge-green' : 'btn-danger'}" onclick="toggleHide('${r.id}', ${!r.hidden})"><i class="ti ti-${r.hidden ? 'eye' : 'eye-off'}"></i></button>
+          </td>
+        </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+}
+
+window.approveComment = async (id) => {
+  const { error } = await db.from('comments').update({ approved: true }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Approved', 'success'); load();
+};
+window.deleteComment = async (id) => {
+  const ok = await confirm('Delete comment?', 'This cannot be undone.');
+  if (!ok) return;
+  const { error } = await db.from('comments').delete().eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Deleted'); load();
+};
+window.togglePin = async (id, val) => {
+  const { error } = await db.from('reviews').update({ pinned: val }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  load();
+};
+window.toggleHide = async (id, val) => {
+  const { error } = await db.from('reviews').update({ hidden: val }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  load();
+};
+
+load();
+</script>
+</body>
+</html>

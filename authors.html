@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Authors — My Novel World</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <style>
+      .authors-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1.5rem;
+      }
+      .author-card {
+        padding: 1.75rem;
+        text-align: center;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      }
+      .author-card:hover {
+        transform: translateY(-3px);
+      }
+      .author-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.4rem;
+        color: var(--gold);
+        margin: 0 auto 1rem;
+        overflow: hidden;
+      }
+      .author-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .author-name {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.15rem;
+        margin-bottom: 0.2rem;
+      }
+      .author-badge {
+        color: var(--gold);
+        font-size: 0.7rem;
+      }
+      .author-bio {
+        font-size: 0.78rem;
+        color: var(--text2);
+        margin-top: 0.5rem;
+        line-height: 1.5;
+      }
+      .author-count {
+        font-size: 0.7rem;
+        color: var(--text3);
+        margin-top: 0.6rem;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav" id="main-nav">
+      <span class="nav-logo" onclick="location.href = '/'">MY NOVEL WORLD</span>
+      <ul class="nav-links">
+        <li><a href="/">Library</a></li>
+        <li>
+          <a href="/updates.html"
+            >Updates<span class="nav-badge" id="updates-badge"></span
+          ></a>
+        </li>
+        <li><a href="/reading-order.html">Reading Order</a></li>
+        <li><a href="/authors.html">Authors</a></li>
+        <li><a href="/qa.html">Q&A</a></li>
+      </ul>
+      <div id="nav-right" class="nav-right"></div>
+    </nav>
+
+    <div class="page">
+      <div class="container">
+        <div class="fade-up" style="margin-bottom: 2.5rem">
+          <p class="eyebrow">Community</p>
+          <h1 class="section-title">Authors</h1>
+        </div>
+        <div class="authors-grid" id="grid">
+          <div class="empty"><p>Loading...</p></div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import db from "/js/supabase.js";
+      import { initAuth, escapeHtml } from "/js/app.js";
+
+      await initAuth();
+
+      const { data, error } = await db
+        .from("profiles")
+        .select("id, pen_name, bio, avatar_url, book_authors(book_id)")
+        .in("role", ["writer", "admin"])
+        .eq("suspended", false)
+        .not("pen_name", "is", null)
+        .order("pen_name");
+
+      const grid = document.getElementById("grid");
+
+      if (error || !data?.length) {
+        grid.innerHTML = `<div class="empty"><div class="empty-icon">✍️</div><p>No approved Writers yet.</p></div>`;
+      } else {
+        grid.innerHTML = data
+          .map(
+            (a) => `
+        <div class="card author-card fade-up" onclick="location.href='/author.html?id=${a.id}'">
+          <div class="author-avatar">
+            ${a.avatar_url ? `<img src="${a.avatar_url}" alt="">` : (a.pen_name || "?")[0].toUpperCase()}
+          </div>
+          <div class="author-name">${escapeHtml(a.pen_name)}</div>
+          <div class="author-badge"><i class="ti ti-rosette-discount-check"></i> Verified Writer</div>
+          ${a.bio ? `<p class="author-bio">${escapeHtml(a.bio.slice(0, 90))}${a.bio.length > 90 ? "…" : ""}</p>` : ""}
+          <div class="author-count">${a.book_authors?.length ?? 0} book${a.book_authors?.length === 1 ? "" : "s"}</div>
+        </div>`,
+          )
+          .join("");
+      }
+    </script>
+  </body>
+</html>

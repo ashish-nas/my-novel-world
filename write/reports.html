@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reports — Write</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+<nav class="nav"><span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span><div id="nav-right" class="nav-right"></div></nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Write</div>
+      <a href="/write/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard & Books</a>
+      <a href="/write/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>My Reading Order</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/write/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments & Reviews</a>
+      <a href="/write/reports.html" class="sidebar-link active"><i class="ti ti-flag"></i>Reports</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/write/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/write/earnings.html" class="sidebar-link"><i class="ti ti-currency-dollar"></i>Earnings</a>
+    </div>
+    <div class="sidebar-section"><div class="sidebar-label">Site</div><a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a></div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header"><div><h1>Reports</h1><p>Reports on your own books, comments, and reviews. The reporter's identity is never shown here \u2014 only to Admin.</p></div></div>
+    <div id="list"></div>
+  </main>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { requireWriter, escapeHtml } from '../js/app.js';
+
+if (!await requireWriter()) throw new Error('Not a Writer');
+
+const { data, error } = await db.from('writer_reports').select('*').order('created_at', { ascending: false });
+const list = document.getElementById('list');
+
+if (error) {
+  list.innerHTML = `<div class="empty card" style="padding:3rem"><p>${escapeHtml(error.message)}</p></div>`;
+} else if (!data?.length) {
+  list.innerHTML = `<div class="empty card" style="padding:3rem"><div class="empty-icon">\u2705</div><p>No reports on your content.</p></div>`;
+} else {
+  list.innerHTML = `<div class="card" style="overflow:hidden"><table class="admin-table">
+    <thead><tr><th>Target</th><th>Reason</th><th>Date</th><th>Status</th></tr></thead>
+    <tbody>${data.map(r => `
+      <tr>
+        <td style="text-transform:capitalize">${escapeHtml(r.target_type)}</td>
+        <td style="max-width:400px;white-space:normal">${escapeHtml(r.reason)}</td>
+        <td style="color:var(--text2)">${new Date(r.created_at).toLocaleDateString()}</td>
+        <td><span class="badge ${r.status==='open'?'badge-gold':r.status==='resolved'?'badge-green':'badge-red'}">${r.status}</span></td>
+      </tr>`).join('')}</tbody>
+  </table></div>
+  <p style="color:var(--text3);font-size:.78rem;margin-top:1rem">Reports are reviewed and resolved by Admin. This page is read-only.</p>`;
+}
+</script>
+</body>
+</html>

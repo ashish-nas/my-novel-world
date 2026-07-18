@@ -749,13 +749,31 @@
               .eq("published", true)
           : { data: [] };
 
+        const { data: bookAuthors } = await db
+          .from("book_authors")
+          .select("book_id, profiles(pen_name)")
+          .in("book_id", bookIds)
+          .eq("status", "accepted");
+
+        const bylineMap = {};
+        (bookAuthors || []).forEach((a) => {
+          const name = a.profiles?.pen_name;
+          if (!name) return;
+          (bylineMap[a.book_id] ||= []).push(name);
+        });
+
         // Attach counts to each book
         allBooks = books.map((b) => {
           const bookVols = (volumes || []).filter((v) => v.book_id === b.id);
           const bookChs = (chapters || []).filter((c) =>
             bookVols.some((v) => v.id === c.volume_id),
           );
-          return { ...b, _volCount: bookVols.length, _chCount: bookChs.length };
+          return {
+            ...b,
+            _volCount: bookVols.length,
+            _chCount: bookChs.length,
+            _byline: (bylineMap[b.id] || []).join(" & ") || "My Novel World",
+          };
         });
 
         buildGenreFilters(allBooks);
@@ -800,7 +818,7 @@
              <div class="book-cover-title">${b.title}</div>`
         }
         <div class="book-genre-badge">${b.genre || ""}</div>
-        <div class="book-cover-author">MY NOVEL WORLD</div>
+        <div class="book-cover-author">${b._byline}</div>
       </div>
       <div class="book-info">
         <div class="book-title">${b.title}</div>

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script>
+      document.documentElement.classList.add("auth-pending");
+    </script>
+    <style>
+      html {
+        background: #0a0a0b;
+      }
+      .auth-pending body {
+        visibility: hidden;
+      }
+    </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Apply to Write — My Novel World</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <style>
+      .apply-wrap {
+        max-width: 620px;
+        margin: 0 auto;
+      }
+      .apply-intro {
+        margin-bottom: 2.5rem;
+      }
+      .apply-intro p {
+        color: var(--text2);
+        line-height: 1.7;
+      }
+      .not-eligible {
+        text-align: center;
+        padding: 3rem 2rem;
+      }
+      .not-eligible .ti {
+        font-size: 2rem;
+        color: var(--text3);
+        margin-bottom: 1rem;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav" id="main-nav">
+      <span class="nav-logo" onclick="location.href = '/'">MY NOVEL WORLD</span>
+      <ul class="nav-links">
+        <li><a href="/">Library</a></li>
+        <li>
+          <a href="/updates.html"
+            >Updates<span class="nav-badge" id="updates-badge"></span
+          ></a>
+        </li>
+        <li><a href="/reading-order.html">Reading Order</a></li>
+        <li><a href="/qa.html">Q&A</a></li>
+      </ul>
+      <div id="nav-right" class="nav-right"></div>
+    </nav>
+
+    <div class="page">
+      <div class="container apply-wrap">
+        <div class="apply-intro fade-up">
+          <p class="eyebrow">Writer / Author Program</p>
+          <h1 class="section-title">Apply to write</h1>
+          <p>
+            My Novel World is open to any reader who wants to publish their
+            own novels here. Every application is reviewed individually —
+            we're not looking for anything in particular, just a genuine
+            sense that you're ready to write. Once approved, you're fully
+            independent: your own books, your own publishing schedule, your
+            own <a href="/write/" style="color: var(--gold)">Write dashboard</a>.
+          </p>
+        </div>
+
+        <div id="gate-message" class="card not-eligible" style="display: none">
+          <i class="ti ti-clock"></i>
+          <p id="gate-text"></p>
+        </div>
+
+        <form id="apply-form" class="card fade-up" style="padding: 2rem; display: none">
+          <div class="form-group">
+            <label class="form-label">Pen name</label>
+            <input
+              id="a-pen-name"
+              class="form-input"
+              placeholder="The name your books will be published under"
+            />
+            <div class="form-hint">
+              Shown publicly everywhere instead of your account username —
+              on book covers, chapter pages, and your author profile.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Bio</label>
+            <textarea
+              id="a-bio"
+              class="form-input"
+              rows="3"
+              placeholder="A couple of sentences for your public author profile..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Why do you want to write here?</label>
+            <textarea
+              id="a-pitch"
+              class="form-input"
+              rows="4"
+              placeholder="Tell us a bit about what you're planning to publish..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Writing sample link</label>
+            <input
+              id="a-sample"
+              class="form-input"
+              placeholder="A link to something you've written — anywhere is fine"
+            />
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-primary w-full"
+            onclick="submitApplication()"
+          >
+            <i class="ti ti-send"></i> Submit Application
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script type="module">
+      import db from "/js/supabase.js";
+      import { requireAuth, currentUser, toast } from "/js/app.js";
+
+      if (!(await requireAuth())) throw new Error("Not signed in");
+
+      const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+      // Eligibility: 7+ day old account, and no application already pending/approved
+      const { data: profile } = await db
+        .from("profiles")
+        .select("created_at, role")
+        .eq("id", currentUser.id)
+        .single();
+
+      const accountAgeMs = Date.now() - new Date(profile.created_at).getTime();
+
+      if (profile.role === "writer" || profile.role === "admin") {
+        showGate("You're already an approved Writer/Author.", "/write/");
+      } else if (accountAgeMs < SEVEN_DAYS_MS) {
+        const daysLeft = Math.ceil((SEVEN_DAYS_MS - accountAgeMs) / (24 * 60 * 60 * 1000));
+        showGate(
+          `Accounts need to be at least 7 days old before applying — ${daysLeft} day${daysLeft === 1 ? "" : "s"} to go. Come back soon.`,
+        );
+      } else {
+        const { data: existing } = await db
+          .from("writer_applications")
+          .select("status")
+          .eq("user_id", currentUser.id)
+          .order("applied_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (existing?.status === "pending") {
+          showGate(
+            "You already have an application pending review. Check your Profile page for updates.",
+            "/profile.html",
+          );
+        } else {
+          document.getElementById("apply-form").style.display = "block";
+        }
+      }
+
+      function showGate(text, linkHref) {
+        document.getElementById("gate-text").innerHTML =
+          text + (linkHref ? ` <a href="${linkHref}" style="color:var(--gold)">Go there</a>` : "");
+        document.getElementById("gate-message").style.display = "block";
+      }
+
+      window.submitApplication = async () => {
+        const pen_name = document.getElementById("a-pen-name").value.trim();
+        const bio = document.getElementById("a-bio").value.trim();
+        const pitch = document.getElementById("a-pitch").value.trim();
+        const sample_url = document.getElementById("a-sample").value.trim();
+
+        if (!pen_name || !pitch) {
+          toast("A pen name and a pitch are both required", "error");
+          return;
+        }
+
+        const { error } = await db.from("writer_applications").insert({
+          user_id: currentUser.id,
+          pen_name,
+          bio,
+          pitch,
+          sample_url,
+          status: "pending",
+        });
+
+        if (error) {
+          toast("Error: " + error.message, "error");
+          return;
+        }
+
+        toast("Application submitted!", "success");
+        setTimeout(() => (location.href = "/profile.html"), 900);
+      };
+    </script>
+  </body>
+</html>

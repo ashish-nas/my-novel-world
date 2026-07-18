@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reports — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  .filter-tabs { display: flex; gap: 0.6rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .filter-tabs .btn { position: relative; }
+  .filter-count { display: inline-block; margin-left: 0.4rem; font-size: 0.7rem; opacity: 0.75; }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Content</div>
+      <a href="/admin/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+      <a href="/admin/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>Reading Order</a>
+      <a href="/admin/posts.html" class="sidebar-link"><i class="ti ti-speakerphone"></i>Updates</a>
+      <a href="/admin/countdown.html" class="sidebar-link"><i class="ti ti-hourglass"></i>Countdown</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Writer/Author Program</div>
+      <a href="/admin/writer-applications.html" class="sidebar-link"><i class="ti ti-file-description"></i>Applications</a>
+      <a href="/admin/writers.html" class="sidebar-link"><i class="ti ti-feather"></i>Writers</a>
+      <a href="/admin/reports.html" class="sidebar-link active"><i class="ti ti-flag"></i>Reports</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/admin/qa.html" class="sidebar-link"><i class="ti ti-question-mark"></i>Q&A</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/admin/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/admin/writing.html" class="sidebar-link"><i class="ti ti-pencil"></i>Writing Tracker</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+      <a href="/write/" class="sidebar-link"><i class="ti ti-feather"></i>My Write Dashboard</a>
+    </div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header">
+      <div>
+        <h1>Reports</h1>
+        <p>Site-wide — every report, every reporter visible. Writers see the same reports on their own content with the reporter hidden.</p>
+      </div>
+    </div>
+
+    <div class="filter-tabs" id="filter-tabs" style="display:flex;gap:.6rem;margin-bottom:1.5rem;flex-wrap:wrap">
+      <button class="btn btn-primary" data-filter="open" onclick="setFilter('open')">Open</button>
+      <button class="btn" data-filter="resolved" onclick="setFilter('resolved')">Resolved</button>
+      <button class="btn" data-filter="dismissed" onclick="setFilter('dismissed')">Dismissed</button>
+      <button class="btn" data-filter="all" onclick="setFilter('all')">All</button>
+    </div>
+
+    <div class="card" style="overflow:hidden">
+      <table class="admin-table">
+        <thead><tr><th>Reported by</th><th>Target</th><th>Reason</th><th>Date</th><th>Status</th><th></th></tr></thead>
+        <tbody id="reports-body">
+          <tr><td colspan="6"><div class="empty"><div class="empty-icon">\ud83d\udea9</div><p>Loading...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { requireAdmin, toast, escapeHtml } from '../js/app.js';
+
+if (!await requireAdmin()) throw new Error('Not admin');
+
+let currentFilter = 'open';
+
+window.setFilter = (f) => {
+  currentFilter = f;
+  document.querySelectorAll('#filter-tabs button').forEach(b => b.classList.toggle('btn-primary', b.dataset.filter === f));
+  loadReports();
+};
+
+function targetLink(r) {
+  if (r.target_type === 'book') return `<a href="/book.html?id=${r.target_id}" target="_blank">Book</a>`;
+  if (r.target_type === 'comment') return `Comment`;
+  if (r.target_type === 'review') return `Review`;
+  return r.target_type;
+}
+
+async function loadReports() {
+  let query = db.from('reports')
+    .select('id, target_type, target_id, reason, status, created_at, profiles(username)')
+    .order('created_at', { ascending: false });
+
+  if (currentFilter !== 'all') query = query.eq('status', currentFilter);
+
+  const { data, error } = await query;
+  const body = document.getElementById('reports-body');
+
+  if (error) {
+    body.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">\u26a0</div><p>${escapeHtml(error.message)}</p></div></td></tr>`;
+    return;
+  }
+
+  if (!data?.length) {
+    body.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">\u2705</div><p>No ${currentFilter === 'all' ? '' : currentFilter} reports.</p></div></td></tr>`;
+    return;
+  }
+
+  body.innerHTML = data.map(r => `
+    <tr>
+      <td>${escapeHtml(r.profiles?.username ?? 'deleted user')}</td>
+      <td>${targetLink(r)}</td>
+      <td style="max-width:360px;white-space:normal">${escapeHtml(r.reason)}</td>
+      <td style="white-space:nowrap;color:var(--text2)">${new Date(r.created_at).toLocaleDateString()}</td>
+      <td><span class="badge ${r.status==='open'?'badge-gold':r.status==='resolved'?'badge-green':'badge-red'}">${r.status}</span></td>
+      <td class="td-actions">
+        ${r.status === 'open' ? `
+          <button class="btn btn-sm badge-green" onclick="setStatus('${r.id}','resolved')"><i class="ti ti-check"></i></button>
+          <button class="btn btn-sm" onclick="setStatus('${r.id}','dismissed')"><i class="ti ti-x"></i></button>` : ''}
+      </td>
+    </tr>`).join('');
+}
+
+window.setStatus = async (id, status) => {
+  const { error } = await db.from('reports').update({ status }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Report ' + status);
+  loadReports();
+};
+
+loadReports();
+</script>
+</body>
+</html>

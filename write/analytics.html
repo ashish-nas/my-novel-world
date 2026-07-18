@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Analytics — Write</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+<nav class="nav"><span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span><div id="nav-right" class="nav-right"></div></nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Write</div>
+      <a href="/write/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard & Books</a>
+      <a href="/write/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>My Reading Order</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/write/comments.html" class="sidebar-link"><i class="ti ti-message-dots"></i>Comments & Reviews</a>
+      <a href="/write/reports.html" class="sidebar-link"><i class="ti ti-flag"></i>Reports</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/write/analytics.html" class="sidebar-link active"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/write/earnings.html" class="sidebar-link"><i class="ti ti-currency-dollar"></i>Earnings</a>
+    </div>
+    <div class="sidebar-section"><div class="sidebar-label">Site</div><a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a></div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header"><div><h1>My Analytics</h1><p>Your own books only.</p></div></div>
+
+    <div class="metric-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2rem">
+      <div class="card" style="padding:1.25rem"><div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">Total Reads</div><div id="m-reads" style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:var(--gold)">\u2013</div></div>
+      <div class="card" style="padding:1.25rem"><div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">Avg. Completion</div><div id="m-completion" style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:var(--gold)">\u2013</div></div>
+      <div class="card" style="padding:1.25rem"><div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">Total Likes</div><div id="m-likes" style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:var(--gold)">\u2013</div></div>
+    </div>
+
+    <div class="card" style="overflow:hidden">
+      <table class="admin-table">
+        <thead><tr><th>Chapter</th><th>Book</th><th>Views</th><th>Completed</th><th>Completion %</th><th>Likes</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="6"><div class="empty"><p>Loading...</p></div></td></tr></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { requireWriter, currentUser, escapeHtml } from '../js/app.js';
+
+if (!await requireWriter()) throw new Error('Not a Writer');
+
+const { data: myBooks } = await db.from('book_authors').select('book_id, books(title)').eq('user_id', currentUser.id).eq('status', 'accepted');
+const bookIds = (myBooks ?? []).map(b => b.book_id);
+const bookTitle = Object.fromEntries((myBooks ?? []).map(b => [b.book_id, b.books?.title]));
+
+const rowsEl = document.getElementById('rows');
+if (!bookIds.length) {
+  rowsEl.innerHTML = `<tr><td colspan="6"><div class="empty"><p>No books yet.</p></div></td></tr>`;
+} else {
+  const { data: chapters } = await db.from('chapters').select('id, title, book_id, likes_count').in('book_id', bookIds);
+  const chapterIds = (chapters ?? []).map(c => c.id);
+
+  const [{ data: views }, { data: progress }] = await Promise.all([
+    chapterIds.length ? db.from('page_views').select('chapter_id').in('chapter_id', chapterIds) : { data: [] },
+    chapterIds.length ? db.from('reading_progress').select('chapter_id, completed').in('chapter_id', chapterIds) : { data: [] },
+  ]);
+
+  const viewCount = {};
+  (views ?? []).forEach(v => viewCount[v.chapter_id] = (viewCount[v.chapter_id] ?? 0) + 1);
+
+  const completedCount = {}, seenCount = {};
+  (progress ?? []).forEach(p => {
+    seenCount[p.chapter_id] = (seenCount[p.chapter_id] ?? 0) + 1;
+    if (p.completed) completedCount[p.chapter_id] = (completedCount[p.chapter_id] ?? 0) + 1;
+  });
+
+  let totalReads = 0, totalLikes = 0, completionSum = 0, completionN = 0;
+
+  const rows = (chapters ?? []).map(c => {
+    const v = viewCount[c.id] ?? 0;
+    const done = completedCount[c.id] ?? 0;
+    const seen = seenCount[c.id] ?? 0;
+    const pct = seen ? Math.round((done / seen) * 100) : 0;
+    totalReads += v; totalLikes += c.likes_count ?? 0;
+    if (seen) { completionSum += pct; completionN++; }
+    return { ...c, v, done, pct };
+  }).sort((a, b) => b.v - a.v);
+
+  document.getElementById('m-reads').textContent = totalReads.toLocaleString();
+  document.getElementById('m-completion').textContent = completionN ? Math.round(completionSum / completionN) + '%' : '\u2013';
+  document.getElementById('m-likes').textContent = totalLikes.toLocaleString();
+
+  rowsEl.innerHTML = rows.length ? rows.map(r => `
+    <tr>
+      <td class="td-title">${escapeHtml(r.title)}</td>
+      <td style="color:var(--text2)">${escapeHtml(bookTitle[r.book_id] ?? '')}</td>
+      <td>${r.v.toLocaleString()}</td>
+      <td>${r.done.toLocaleString()}</td>
+      <td>${r.pct}%</td>
+      <td>${(r.likes_count ?? 0).toLocaleString()}</td>
+    </tr>`).join('') : `<tr><td colspan="6"><div class="empty"><p>No chapters yet.</p></div></td></tr>`;
+}
+</script>
+</body>
+</html>
