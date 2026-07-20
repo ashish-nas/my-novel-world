@@ -83,6 +83,7 @@
     </div>
 
     <button class="btn btn-primary mt-3" onclick="saveBook()"><i class="ti ti-device-floppy"></i> Save Book</button>
+    <button class="btn btn-danger mt-3" id="delete-book-btn" onclick="deleteBook()" style="display:none"><i class="ti ti-trash"></i> Delete Book</button>
 
     <!-- CO-AUTHORS — creator only -->
     <div id="coauthor-section" style="display:none;margin-top:3rem;border-top:1px solid var(--border);padding-top:2rem">
@@ -128,6 +129,7 @@ if (bookId) {
 
   if (isCreator) {
     document.getElementById('coauthor-section').style.display = 'block';
+    document.getElementById('delete-book-btn').style.display = 'inline-flex';
     loadCoAuthors();
   }
 }
@@ -213,6 +215,19 @@ window.saveBook = async () => {
     setTimeout(() => location.reload(), 700);
     return;
   }
+};
+
+window.deleteBook = async () => {
+  const title = document.getElementById('b-title').value.trim() || 'this book';
+  const ok = await confirm(
+    'Delete this book?',
+    `"${title}" and every volume and chapter in it will be permanently deleted. This cannot be undone.`,
+  );
+  if (!ok) return;
+  const { error } = await db.from('books').delete().eq('id', bookId);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Book deleted');
+  location.href = '/write/';
 };
 </script>
 </body>

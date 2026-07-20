@@ -57,13 +57,20 @@ explicit yes from you first. Safe to remove once you've confirmed `/write`
 covers everything you need from them.
 
 ## Deploy checklist
-1. Run `schema-v2.sql` in Supabase SQL Editor (after the id swap above).
-2. `supabase functions deploy create-connect-account && supabase functions deploy create-donation-checkout && supabase functions deploy stripe-webhook && supabase functions deploy unsubscribe`
-   (redeploy `unsubscribe` since its location changed).
-3. Set secrets if you haven't: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
-   `SITE_URL` — see the Stripe Connect Setup Guide (§11) in the Design
-   Document v2.0 for exactly where each one comes from.
-4. `git add . && git commit && git push` → Vercel deploys the rest automatically.
+1. Run `schema-v2.sql` in Supabase SQL Editor (after the two id/name swaps
+   near the bottom), **then** run `schema-v2-razorpay.sql` — it's a
+   supplementary migration, run it after, not instead of, the main one.
+2. `supabase functions deploy create-razorpay-order && supabase functions deploy razorpay-webhook && supabase functions deploy unsubscribe`
+   (redeploy `unsubscribe` too — its location changed earlier in this doc).
+3. Set secrets: `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`,
+   `RAZORPAY_WEBHOOK_SECRET`, `SUPABASE_URL` — see the section below for
+   where each comes from. (`SUPABASE_SERVICE_ROLE_KEY` doesn't need
+   setting — Supabase provides it automatically.)
+4. In Razorpay Dashboard → Settings → Webhooks, add an endpoint pointing to
+   `https://<project-ref>.supabase.co/functions/v1/razorpay-webhook`,
+   subscribed to the `payment.captured` event. This is where the webhook
+   secret in step 3 comes from.
+5. `git add . && git commit && git push` → Vercel deploys the rest automatically.
 
 ## Verified before delivery
 Every embedded `<script type="module">` block across all 38 HTML pages in
@@ -129,3 +136,98 @@ gaps:
 
 Re-ran the full syntax/tag-balance/link-resolution/duplicate-id verification
 suite after every fix in this pass, not just at the end.
+
+## Third pass — closing the self-service deletion gap
+
+You'd decided Writers can delete their own books and accounts without going
+through Admin, but there was no actual button for either. Fixed the
+book-level half of that:
+
+- **`write/edit-book.html`** now has a Delete Book button, shown only to the
+  book's creator (matching exactly who the RLS `DELETE` policy already
+  authorizes) — deletes the book and everything under it.
+- **`created_by`'s foreign key had no `ON DELETE` behavior specified at
+  all**, which defaults to blocking the delete outright — a creator
+  couldn't have deleted their own account while they still owned any book,
+  solo or co-authored. Now `ON DELETE SET NULL`, so the account can go and
+  a co-authored book survives for its remaining authors. A solely-authored
+  book loses its manager (nobody left who can invite/remove co-authors on
+  it) — an inherent tradeoff of letting the account disappear at all, not a
+  bug, but worth knowing.
+
+Full account deletion (not just a book) is still not built — see the reply
+this changelog shipped alongside for why that's a separate decision, not
+just more code.
+
+## Fourth pass — Stripe replaced with Razorpay entirely
+
+Stripe turned out to be a dead end for this project: new India accounts are
+invite-only, and even an invite requires a registered business, not an
+individual. Looked at Razorpay's own multi-party product (Route) as the
+direct equivalent to Stripe Connect and found it's *also* gated — a
+September 2025 RBI rule requires \u20b940L+ domestic turnover or \u20b95L+ export
+turnover, which cut off real businesses that didn't qualify starting January
+2026. A brand-new site has none of that revenue.
+
+So this switches to a different model entirely: **you collect, you pay
+out.** One Razorpay account, in your name, collects every donation. The
+database tracks who each one was for and whether you've paid that Writer
+their share yet. You send it yourself, monthly, via UPI, then mark it paid.
+
+**Removed:**
+- `create-connect-account`, `create-donation-checkout`, `stripe-webhook` —
+  gone, not just unused. They could never have worked given the account
+  restrictions above, and leaving dead code that references a blocked
+  payment flow seemed more likely to cause confusion than help.
+- `profiles.stripe_account_id`, `profiles.stripe_charges_enabled` — dropped
+  in `schema-v2-razorpay.sql`.
+
+**Added:**
+- `schema-v2-razorpay.sql` — supplementary migration. Safe to run whether
+  or not you'd already run the Stripe version of Part 3, since every
+  statement is idempotent.
+- `create-razorpay-order` — creates a Razorpay Order for a donation. Checks
+  the recipient is an approved, non-suspended Writer with a UPI id set
+  before allowing it — all three, not just the UPI id, since UPI id alone
+  turned out to be settable by any signed-in user, not just Writers (see
+  below).
+- `razorpay-webhook` — the only place a donation actually gets recorded,
+  same "never trust the client alone" principle as the Stripe version had.
+  Verifies `x-razorpay-signature` via HMAC-SHA256 against the raw request
+  body before touching anything.
+- `admin/payouts.html` — every Writer with money owed, their UPI id, a
+  running total, and a Mark Paid button. Purely a record-keeper; nothing on
+  this page moves money on its own.
+- `write/earnings.html` — rebuilt around a UPI id field instead of a Stripe
+  connect flow, with pending vs. already-paid amounts shown separately.
+
+**Currency:** real USD processing turned out to be gated too — Razorpay
+requires an account already active on domestic payments, a banking-partner
+approval process, and in some of their documented paths a settlement
+history from a prior payment provider. None of that is available to a new
+account either. Donations are in \u20b9 throughout now; the rest of the
+project's existing $ references (design doc prose, etc.) weren't touched,
+since those were never live money, just labels.
+
+**Found while rebuilding:**
+- `admin/index.html` — the site owner's own dashboard — had never been
+  updated with links to Applications, Writers, Reports, or now Payouts.
+  Every other admin page had them; this one didn't, plus it still pointed
+  at the superseded Novels/Comments pages. Brought in line with the rest.
+- The Writer-eligibility check for receiving a donation verified UPI id and
+  suspension status but never verified the recipient is actually an
+  approved Writer. Since `upi_id`'s column grant allows any signed-in user
+  to set it on their own row — not just approved Writers — a regular
+  reader could have set their own UPI id and, if someone navigated to their
+  `author.html` page directly by id, received a donation never meant for
+  them. Added the missing role check at the point that actually initiates
+  a payment, plus tightened `author.html`'s own query the same way so a
+  non-Writer's page doesn't render Writer UI even if visited directly.
+- An embedded-relation query in the first draft of `admin/payouts.html`
+  guessed at Postgres's auto-generated foreign key constraint name
+  (`donations_writer_id_fkey`) to disambiguate which of `donations`' two
+  profile references to join through. It was probably right, but "probably"
+  isn't good enough for a page you'll depend on every month — replaced with
+  two plain queries joined in JavaScript, which doesn't depend on guessing
+  anything.
+

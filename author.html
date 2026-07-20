@@ -171,6 +171,7 @@
         color: var(--text);
       }
     </style>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   </head>
   <body>
     <nav class="nav" id="main-nav">
@@ -230,8 +231,9 @@
 
       const { data: author, error } = await db
         .from("profiles")
-        .select("id, pen_name, bio, avatar_url, suspended, stripe_charges_enabled")
+        .select("id, pen_name, bio, avatar_url, suspended, upi_id, role")
         .eq("id", authorId)
+        .in("role", ["writer", "admin"])
         .single();
 
       if (error || !author) {
@@ -264,18 +266,18 @@
       }
 
       async function loadDonateWidget() {
-        if (!author.stripe_charges_enabled) return; // no widget at all if not set up
+        if (!author.upi_id) return; // no widget at all if the Writer hasn't set up payouts
         const el = document.getElementById("donate-container");
         el.innerHTML = `
           <div class="donate-widget">
-            <button class="amt-btn" data-v="300">$3</button>
-            <button class="amt-btn active" data-v="500">$5</button>
-            <button class="amt-btn" data-v="1000">$10</button>
-            <input class="amt-custom" id="custom-amt" placeholder="Custom $">
+            <button class="amt-btn" data-v="5000">\u20b950</button>
+            <button class="amt-btn active" data-v="10000">\u20b9100</button>
+            <button class="amt-btn" data-v="20000">\u20b9200</button>
+            <input class="amt-custom" id="custom-amt" placeholder="Custom \u20b9">
             <button class="btn btn-primary" id="support-btn"><i class="ti ti-heart"></i> Support ${escapeHtml(author.pen_name)}</button>
           </div>`;
 
-        let selected = 500;
+        let selected = 10000; // paise
         el.querySelectorAll(".amt-btn").forEach((b) => {
           b.onclick = () => {
             selected = Number(b.dataset.v);
@@ -294,17 +296,45 @@
             location.href = "/login.html";
             return;
           }
-          if (!selected || selected < 50) {
-            toast("Choose an amount of at least $0.50", "error");
+          if (!selected || selected < 100) {
+            toast("Choose an amount of at least \u20b91", "error");
             return;
           }
-          const json = await callFunction("create-donation-checkout", {
+          const order = await callFunction("create-razorpay-order", {
             writer_id: author.id,
             amount_cents: selected,
           });
-          if (json.url) location.href = json.url;
-          else toast("Error: " + (json.error ?? "unknown"), "error");
+          if (order.error) {
+            toast("Error: " + order.error, "error");
+            return;
+          }
+          openRazorpayCheckout(order);
         };
+      }
+
+      function openRazorpayCheckout(order) {
+        const rzp = new Razorpay({
+          key: order.key_id,
+          order_id: order.order_id,
+          amount: order.amount,
+          currency: order.currency,
+          name: "My Novel World",
+          description: `Support ${order.writer_name}`,
+          theme: { color: "#c9a84c" },
+          // The actual donation record is written by razorpay-webhook once
+          // Razorpay confirms the payment server-side — this handler is
+          // just for immediate UI feedback, never treated as proof of
+          // payment on its own.
+          handler: () => {
+            toast("Thank you! Your support is on its way.", "success");
+            setTimeout(() => location.reload(), 1200);
+          },
+          modal: {
+            ondismiss: () => toast("Payment cancelled"),
+          },
+        });
+        rzp.on("payment.failed", () => toast("Payment failed \u2014 please try again", "error"));
+        rzp.open();
       }
 
       async function loadSupporterCount() {

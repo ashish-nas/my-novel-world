@@ -922,12 +922,12 @@
 
         const creatorId = data?.[0]?.user_id;
         const { data: creatorProfile } = creatorId
-          ? await db.from("profiles").select("id, stripe_charges_enabled").eq("id", creatorId).single()
+          ? await db.from("profiles").select("id, upi_id").eq("id", creatorId).single()
           : { data: null };
 
         let html = names.length ? `by ${names.map((n) => escapeHtml(n)).join(" &amp; ")}` : "";
 
-        if (creatorProfile?.stripe_charges_enabled) {
+        if (creatorProfile?.upi_id) {
           html += ` <a href="/author.html?id=${creatorProfile.id}#support" style="color:var(--gold);margin-left:.5rem"><i class="ti ti-heart"></i> Support</a>`;
         }
 

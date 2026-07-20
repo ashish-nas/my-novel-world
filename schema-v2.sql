@@ -104,7 +104,7 @@ REVOKE UPDATE ON profiles FROM authenticated;
 GRANT UPDATE (username, avatar_url, pen_name, bio) ON profiles TO authenticated;
 
 -- books: track the original creator
-ALTER TABLE books ADD COLUMN created_by uuid REFERENCES profiles(id);
+ALTER TABLE books ADD COLUMN created_by uuid REFERENCES profiles(id) ON DELETE SET NULL;
 
 -- writer_applications
 CREATE TABLE writer_applications (

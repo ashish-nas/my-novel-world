@@ -419,11 +419,8 @@ verify_jwt = false
 [functions.unsubscribe]
 verify_jwt = false
 
-[functions.create-connect-account]
+[functions.create-razorpay-order]
 verify_jwt = true
 
-[functions.create-donation-checkout]
-verify_jwt = true
-
-[functions.stripe-webhook]
+[functions.razorpay-webhook]
 verify_jwt = false

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>document.documentElement.classList.add('auth-pending');</script>
+<style>html{background:#0a0a0b}.auth-pending body{visibility:hidden}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payouts — Admin</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-logo" onclick="location.href='/'">MY NOVEL WORLD</span>
+  <div id="nav-right" class="nav-right"></div>
+</nav>
+
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Content</div>
+      <a href="/admin/" class="sidebar-link"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+      <a href="/admin/reading-order.html" class="sidebar-link"><i class="ti ti-list-numbers"></i>Reading Order</a>
+      <a href="/admin/posts.html" class="sidebar-link"><i class="ti ti-speakerphone"></i>Updates</a>
+      <a href="/admin/countdown.html" class="sidebar-link"><i class="ti ti-hourglass"></i>Countdown</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Writer/Author Program</div>
+      <a href="/admin/writer-applications.html" class="sidebar-link"><i class="ti ti-file-description"></i>Applications</a>
+      <a href="/admin/writers.html" class="sidebar-link"><i class="ti ti-feather"></i>Writers</a>
+      <a href="/admin/reports.html" class="sidebar-link"><i class="ti ti-flag"></i>Reports</a>
+      <a href="/admin/payouts.html" class="sidebar-link active"><i class="ti ti-currency-rupee"></i>Payouts</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Community</div>
+      <a href="/admin/qa.html" class="sidebar-link"><i class="ti ti-question-mark"></i>Q&A</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Insights</div>
+      <a href="/admin/analytics.html" class="sidebar-link"><i class="ti ti-chart-line"></i>Analytics</a>
+      <a href="/admin/writing.html" class="sidebar-link"><i class="ti ti-pencil"></i>Writing Tracker</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Site</div>
+      <a href="/" class="sidebar-link"><i class="ti ti-arrow-left"></i>View Site</a>
+      <a href="/write/" class="sidebar-link"><i class="ti ti-feather"></i>My Write Dashboard</a>
+    </div>
+  </aside>
+
+  <main class="admin-main fade-up">
+    <div class="admin-header">
+      <div>
+        <h1>Payouts</h1>
+        <p>Every Writer with a pending balance. Pay them via their UPI ID yourself, then mark it paid here — nothing here moves money automatically.</p>
+      </div>
+    </div>
+
+    <div id="payouts-list"></div>
+  </main>
+</div>
+
+<div class="overlay" id="pay-modal">
+  <div class="dialog" style="max-width:440px;text-align:left">
+    <h3 id="pay-modal-title">Mark as paid</h3>
+    <p style="color:var(--text2);font-size:.85rem;margin-top:.5rem" id="pay-modal-body"></p>
+    <div class="dialog-btns mt-3">
+      <button class="btn btn-primary" onclick="confirmMarkPaid()">Yes, I've sent it</button>
+      <button class="btn" onclick="document.getElementById('pay-modal').classList.remove('show')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import db from '../js/supabase.js';
+import { requireAdmin, toast, escapeHtml } from '../js/app.js';
+
+if (!await requireAdmin()) throw new Error('Not admin');
+
+const money = (paise) => '\u20b9' + (paise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+let pendingTargetWriterId = null;
+let pendingTargetIds = [];
+
+async function load() {
+  const { data: donationRows, error } = await db.from('donations')
+    .select('id, amount_cents, platform_fee_cents, writer_id')
+    .eq('status', 'succeeded').eq('paid_out', false);
+
+  const list = document.getElementById('payouts-list');
+
+  if (error) {
+    list.innerHTML = `<div class="empty card" style="padding:3rem"><p>${escapeHtml(error.message)}</p></div>`;
+    return;
+  }
+
+  if (!donationRows?.length) {
+    list.innerHTML = `<div class="empty card" style="padding:3rem"><div class="empty-icon">\u2705</div><p>Nothing pending \u2014 everyone's paid up to date.</p></div>`;
+    return;
+  }
+
+  const writerIds = [...new Set(donationRows.map(d => d.writer_id).filter(Boolean))];
+  const { data: writerProfiles } = await db.from('profiles').select('id, pen_name, upi_id').in('id', writerIds);
+  const profileById = Object.fromEntries((writerProfiles ?? []).map(p => [p.id, p]));
+
+  const byWriter = {};
+  donationRows.forEach(d => {
+    const key = d.writer_id;
+    if (!byWriter[key]) byWriter[key] = { penName: profileById[key]?.pen_name, upi: profileById[key]?.upi_id, total: 0, ids: [] };
+    byWriter[key].total += (d.amount_cents - d.platform_fee_cents);
+    byWriter[key].ids.push(d.id);
+  });
+
+  const writers = Object.entries(byWriter).sort((a, b) => b[1].total - a[1].total);
+
+  list.innerHTML = `<div class="card" style="overflow:hidden"><table class="admin-table">
+    <thead><tr><th>Writer</th><th>UPI ID</th><th>Pending</th><th></th></tr></thead>
+    <tbody>${writers.map(([writerId, w]) => `
+      <tr>
+        <td class="td-title">${escapeHtml(w.penName ?? 'Unknown')}</td>
+        <td>${w.upi ? `<code>${escapeHtml(w.upi)}</code>` : '<span style="color:var(--text3)">not set \u2014 can\'t pay out yet</span>'}</td>
+        <td>${money(w.total)}</td>
+        <td class="td-actions">
+          <button class="btn btn-sm btn-primary" ${w.upi ? '' : 'disabled'} onclick='openPayModal(${JSON.stringify(writerId)}, ${JSON.stringify(w.penName)}, ${JSON.stringify(w.upi)}, ${w.total}, ${JSON.stringify(w.ids)})'>
+            <i class="ti ti-check"></i> Mark Paid
+          </button>
+        </td>
+      </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+window.openPayModal = (writerId, penName, upi, total, ids) => {
+  pendingTargetWriterId = writerId;
+  pendingTargetIds = ids;
+  document.getElementById('pay-modal-title').textContent = `Mark ${penName}'s payout as sent?`;
+  document.getElementById('pay-modal-body').textContent =
+    `Confirms you've sent ${money(total)} to ${upi} outside the site. This just updates the record — it doesn't send anything itself.`;
+  document.getElementById('pay-modal').classList.add('show');
+};
+
+window.confirmMarkPaid = async () => {
+  const { error } = await db.from('donations')
+    .update({ paid_out: true, paid_out_at: new Date().toISOString() })
+    .in('id', pendingTargetIds);
+  document.getElementById('pay-modal').classList.remove('show');
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Marked as paid', 'success');
+  load();
+};
+
+load();
+</script>
+</body>
+</html>
