@@ -12,10 +12,8 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const SUPABASE_URL = Deno.env.get("https://cjblsyitnezgpkykitax.supabase.co")!;
-const SERVICE_ROLE_KEY = Deno.env.get(
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmxzeWl0bmV6Z3BreWtpdGF4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDM5MjM4OSwiZXhwIjoyMDk1OTY4Mzg5fQ.z2ImQDE0AZnlx2fREWQqSMOjOmK0ui_ZztRv2Ksqa2c",
-)!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SB_SECRET_KEY")!;
 
 const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 

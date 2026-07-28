@@ -12,16 +12,12 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const SUPABASE_URL = Deno.env.get("https://cjblsyitnezgpkykitax.supabase.co")!;
-const SERVICE_ROLE_KEY = Deno.env.get(
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmxzeWl0bmV6Z3BreWtpdGF4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDM5MjM4OSwiZXhwIjoyMDk1OTY4Mzg5fQ.z2ImQDE0AZnlx2fREWQqSMOjOmK0ui_ZztRv2Ksqa2c",
-)!;
-const RESEND_API_KEY = Deno.env.get("re_AzRrDwrJ_E92xNXAkJ6Bc634G57chVhjA")!;
-const TRIGGER_SECRET = Deno.env.get(
-  "70686c65a9fbd095a010302081c60e323e98a236b5f462ab",
-)!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SB_SECRET_KEY")!;
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
+const TRIGGER_SECRET = Deno.env.get("TRIGGER_SECRET")!;
 // Your deployed site, no trailing slash — e.g. https://mynovelworld.vercel.app
-const SITE_URL = Deno.env.get("https://my-novel-world.vercel.app/")!;
+const SITE_URL = Deno.env.get("SITE_URL")!;
 // Must be an address on a domain you've verified in Resend.
 // resend.dev / onboarding@resend.dev can only send to YOUR OWN account
 // email — see SETUP.md before you rely on this for real subscribers.

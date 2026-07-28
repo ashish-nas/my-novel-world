@@ -688,7 +688,7 @@
 
     <script type="module">
       import db from "/js/supabase.js";
-      import { initAuth, currentUser, currentProfile } from "/js/app.js";
+      import { initAuth, currentUser, currentProfile, escapeHtml } from "/js/app.js";
 
       document.getElementById("footer-year").textContent =
         "© " + new Date().getFullYear();
@@ -809,19 +809,19 @@
             const chCount = b._chCount ?? 0;
 
             return `
-    <div class="book-card fade-up" data-genre="${b.genre}" onclick="location.href='/book.html?id=${b.id}'">
+    <div class="book-card fade-up" data-genre="${escapeHtml(b.genre)}" onclick="location.href='/book.html?id=${b.id}'">
       <div class="book-cover" style="background:${bg}">
         ${
           b.cover_url
-            ? `<img src="${b.cover_url}" alt="${b.title}" loading="lazy"><div class="book-cover-overlay"></div>`
+            ? `<img src="${escapeHtml(b.cover_url)}" alt="${escapeHtml(b.title)}" loading="lazy"><div class="book-cover-overlay"></div>`
             : `<div class="book-symbol">${b.symbol || "✦"}</div>
-             <div class="book-cover-title">${b.title}</div>`
+             <div class="book-cover-title">${escapeHtml(b.title)}</div>`
         }
-        <div class="book-genre-badge">${b.genre || ""}</div>
-        <div class="book-cover-author">${b._byline}</div>
+        <div class="book-genre-badge">${escapeHtml(b.genre || "")}</div>
+        <div class="book-cover-author">${escapeHtml(b._byline)}</div>
       </div>
       <div class="book-info">
-        <div class="book-title">${b.title}</div>
+        <div class="book-title">${escapeHtml(b.title)}</div>
         <div class="book-meta">
           <span>${volCount}</span> vol · <span>${chCount}</span> ch
         </div>
@@ -899,12 +899,12 @@
 
         const seeAllRow = `
     <div class="search-result-item" onclick="location.href='/search.html?q=${encodeURIComponent(query)}'" style="text-align:center">
-      <span class="sr-title" style="color:var(--gold);width:100%">See all results for "${query}" →</span>
+      <span class="sr-title" style="color:var(--gold);width:100%">See all results for "${escapeHtml(query)}" →</span>
     </div>`;
 
         if (!items.length) {
           results.innerHTML =
-            `<div class="search-result-item"><span class="sr-title" style="color:var(--text3)">No quick matches for "${query}"</span></div>` +
+            `<div class="search-result-item"><span class="sr-title" style="color:var(--text3)">No quick matches for "${escapeHtml(query)}"</span></div>` +
             seeAllRow;
         } else {
           results.innerHTML =
@@ -914,8 +914,8 @@
       <div class="search-result-item" onclick="location.href='${it.href}'">
         <i class="ti ${it.icon} sr-icon" aria-hidden="true"></i>
         <div>
-          <div class="sr-title">${it.title}</div>
-          <div class="sr-sub">${it.sub}</div>
+          <div class="sr-title">${escapeHtml(it.title)}</div>
+          <div class="sr-sub">${escapeHtml(it.sub)}</div>
         </div>
       </div>`,
               )

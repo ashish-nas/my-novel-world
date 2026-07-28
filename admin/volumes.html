@@ -88,7 +88,7 @@
 
 <script type="module">
 import db from '../js/supabase.js';
-import { requireAdmin, toast, confirm } from '../js/app.js';
+import { requireAdmin, toast, confirm, escapeHtml } from '../js/app.js';
 
 if (!await requireAdmin()) throw new Error('Not admin');
 
@@ -124,13 +124,13 @@ async function loadVolumes() {
     <div class="card" style="margin-bottom:1rem;overflow:hidden">
       <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;margin-bottom:0.2rem">${v.title}</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;margin-bottom:0.2rem">${escapeHtml(v.title)}</div>
           <div style="font-size:0.78rem;color:var(--text2)">${v.chapters?.length ?? 0} chapters · <span class="badge ${v.published?'badge-green':'badge-red'}" style="font-size:.48rem">${v.published?'Live':'Draft'}</span></div>
         </div>
         <div class="td-actions">
           <button class="btn btn-sm" onclick="editVol(${JSON.stringify(v).replace(/"/g,'&quot;')})"><i class="ti ti-pencil"></i> Edit</button>
           <button class="btn btn-sm btn-primary" onclick="addChapter('${v.id}')"><i class="ti ti-plus"></i> Chapter</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteVol('${v.id}','${v.title}')"><i class="ti ti-trash"></i></button>
+          <button class="btn btn-sm btn-danger" onclick="deleteVol(${JSON.stringify({ id: v.id, title: v.title }).replace(/"/g, '&quot;')})"><i class="ti ti-trash"></i></button>
         </div>
       </div>
       <table class="admin-table">
@@ -138,12 +138,12 @@ async function loadVolumes() {
         <tbody>
           ${v.chapters?.length ? v.chapters.sort((a,b)=>a.sort_order-b.sort_order).map(c => `
             <tr>
-              <td class="td-title" style="font-size:.95rem">${c.title}</td>
+              <td class="td-title" style="font-size:.95rem">${escapeHtml(c.title)}</td>
               <td style="font-size:.78rem;color:var(--text2)">${c.word_count?.toLocaleString() ?? 0}</td>
               <td><span class="badge ${c.published?'badge-green':'badge-red'}" style="font-size:.48rem">${c.published?'Live':'Draft'}</span></td>
               <td class="td-actions">
                 <a href="/admin/edit-chapter.html?id=${c.id}" class="btn btn-sm"><i class="ti ti-pencil"></i> Edit</a>
-                <button class="btn btn-sm btn-danger" onclick="deleteChapter('${c.id}','${c.title}')"><i class="ti ti-trash"></i></button>
+                <button class="btn btn-sm btn-danger" onclick="deleteChapter(${JSON.stringify({ id: c.id, title: c.title }).replace(/"/g, '&quot;')})"><i class="ti ti-trash"></i></button>
               </td>
             </tr>`).join('') :
             `<tr><td colspan="4" style="text-align:center;color:var(--text3);font-size:.82rem;padding:1rem">No chapters yet</td></tr>`
@@ -190,7 +190,7 @@ window.saveVolume = async () => {
   closeVolModal(); loadVolumes();
 };
 
-window.deleteVol = async (id, title) => {
+window.deleteVol = async ({ id, title }) => {
   const ok = await confirm('Delete volume?', `"${title}" and all its chapters will be permanently deleted.`);
   if (!ok) return;
   await db.from('volumes').delete().eq('id', id);
@@ -201,7 +201,7 @@ window.addChapter = (volId) => {
   location.href = `/admin/edit-chapter.html?volume=${volId}&book=${bookId}`;
 };
 
-window.deleteChapter = async (id, title) => {
+window.deleteChapter = async ({ id, title }) => {
   const ok = await confirm('Delete chapter?', `"${title}" will be permanently deleted.`);
   if (!ok) return;
   await db.from('chapters').delete().eq('id', id);

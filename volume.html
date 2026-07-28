@@ -314,7 +314,7 @@
 
     <script type="module">
       import db from "/js/supabase.js";
-      import { initAuth, readTime } from "/js/app.js";
+      import { initAuth, readTime, escapeHtml } from "/js/app.js";
 
       const params = new URLSearchParams(location.search);
       const volId = params.get("id");
@@ -405,10 +405,10 @@
       <div class="chapter-num">${String(i + 1).padStart(2, "0")}</div>
       <div class="chapter-info">
         <div class="chapter-title-row">
-          <div class="chapter-title">${c.title}</div>
+          <div class="chapter-title">${escapeHtml(c.title)}</div>
           <span class="chapter-status" id="status-${c.id}"></span>
         </div>
-        ${c.teaser ? `<div class="chapter-teaser">${c.teaser}</div>` : ""}
+        ${c.teaser ? `<div class="chapter-teaser">${escapeHtml(c.teaser)}</div>` : ""}
         <div class="chapter-meta">
           <span>${(c.word_count || 0).toLocaleString()} words</span>
           <span>${readTime(c.word_count || 0)} min read</span>

@@ -13,22 +13,15 @@
 -- just never existed, and nothing ever incremented the streak).
 -- ============================================================================
 
-CREATE TABLE reading_goals (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id uuid REFERENCES profiles(id) ON DELETE CASCADE,
-  weekly_target integer DEFAULT 3,
-  current_streak integer DEFAULT 0,
-  longest_streak integer DEFAULT 0,
-  last_checked_week date,
-  UNIQUE (user_id)
-);
-
-ALTER TABLE reading_goals ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users manage their own reading goal"
-  ON reading_goals FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+-- reading_goals already exists in this database, byte-for-byte identical
+-- to what this block would create: same 6 columns/types/defaults, same
+-- primary key, same UNIQUE(user_id), same FK with ON DELETE CASCADE, RLS
+-- already enabled, and an existing policy ("own rows") with the exact
+-- same USING/WITH CHECK logic as the one below, just a different name.
+-- Verified directly against pg_catalog/information_schema before skipping
+-- this rather than assuming — it holds 2 real rows, so this is left alone
+-- rather than dropped and recreated. Nothing to do here; move on to the
+-- streak-check function below, which does NOT exist yet.
 
 -- Weekly streak check. Deliberately plain SQL, not an Edge Function — this
 -- is pure data manipulation with no external API to call, so a
@@ -322,8 +315,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- One-time migration: attribute every existing book to you, and record
 -- you as its accepted author so the new co-author policies above
 -- recognize your existing content immediately.
--- Replace YOUR-ADMIN-PROFILE-ID with your own row's id from profiles.
-UPDATE books SET created_by = 'YOUR-ADMIN-PROFILE-ID' WHERE created_by IS NULL;
+UPDATE books SET created_by = '81a116f4-3c40-41ff-8dfa-16e0b9ec24c4' WHERE created_by IS NULL;
 
 -- GAP FIX (found on re-audit): pen_name only ever gets set by
 -- approve_writer_application() — but you never go through that flow, so
@@ -332,8 +324,8 @@ UPDATE books SET created_by = 'YOUR-ADMIN-PROFILE-ID' WHERE created_by IS NULL;
 -- instead of your name, your author page shows a blank title, and
 -- authors.html's directory query filters out anyone with a NULL pen_name
 -- — so you wouldn't even appear in your own Authors directory.
--- Replace both the id AND the name below with your own.
-UPDATE profiles SET pen_name = 'YOUR-PEN-NAME' WHERE id = 'YOUR-ADMIN-PROFILE-ID';
+-- Filled in below: Mr. A, same profile id as above.
+UPDATE profiles SET pen_name = 'Mr. A' WHERE id = '81a116f4-3c40-41ff-8dfa-16e0b9ec24c4';
 
 INSERT INTO book_authors (book_id, user_id, status, accepted_at)
 SELECT id, created_by, 'accepted', now() FROM books WHERE created_by IS NOT NULL;

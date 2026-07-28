@@ -271,6 +271,15 @@
     <script type="module">
       import db from "/js/supabase.js";
 
+      // Only ever follow a same-origin relative path — never let the URL's
+      // own ?redirect= value go straight into location.href unvalidated.
+      // Rejects absolute URLs (http://, //) that would bounce someone who
+      // just authenticated off to a different, attacker-controlled site.
+      function safeRedirect(raw) {
+        if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/admin/";
+        return raw;
+      }
+
       const justVerified =
         new URLSearchParams(location.search).get("verified") === "true";
 
@@ -282,8 +291,7 @@
           data: { session },
         } = await db.auth.getSession();
         if (session) {
-          const redir =
-            new URLSearchParams(location.search).get("redirect") || "/admin/";
+          const redir = safeRedirect(new URLSearchParams(location.search).get("redirect"));
           location.href = redir;
         }
       }
@@ -363,8 +371,7 @@
           showError(error.message);
           return;
         }
-        const redir =
-          new URLSearchParams(location.search).get("redirect") || "/admin/";
+        const redir = safeRedirect(new URLSearchParams(location.search).get("redirect"));
         location.href = redir;
       };
 

@@ -10,11 +10,15 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SB_SECRET_KEY")!;
 const RAZORPAY_WEBHOOK_SECRET = Deno.env.get("RAZORPAY_WEBHOOK_SECRET")!;
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-async function verifySignature(rawBody: string, signature: string, secret: string) {
+async function verifySignature(
+  rawBody: string,
+  signature: string,
+  secret: string,
+) {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -22,7 +26,11 @@ async function verifySignature(rawBody: string, signature: string, secret: strin
     false,
     ["sign"],
   );
-  const sigBytes = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
+  const sigBytes = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(rawBody),
+  );
   const computed = Array.from(new Uint8Array(sigBytes))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
@@ -33,7 +41,10 @@ Deno.serve(async (req) => {
   const signature = req.headers.get("x-razorpay-signature");
   const rawBody = await req.text(); // raw text required — do not parse before verifying
 
-  if (!signature || !(await verifySignature(rawBody, signature, RAZORPAY_WEBHOOK_SECRET))) {
+  if (
+    !signature ||
+    !(await verifySignature(rawBody, signature, RAZORPAY_WEBHOOK_SECRET))
+  ) {
     console.error("Razorpay webhook signature check failed");
     return new Response("invalid signature", { status: 400 });
   }
@@ -72,6 +83,8 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ received: true }), { status: 200 });
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ error: String(err) }), { status: 500 });
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+    });
   }
 });

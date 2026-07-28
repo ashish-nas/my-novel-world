@@ -291,7 +291,7 @@
 
         const avatarEl = document.getElementById("avatar-wrap");
         if (currentProfile.avatar_url) {
-          avatarEl.innerHTML = `<img src="${currentProfile.avatar_url}" alt="">`;
+          avatarEl.innerHTML = `<img src="${escapeHtml(currentProfile.avatar_url)}" alt="">`;
         } else {
           avatarEl.textContent = (
             currentProfile.username ||
@@ -424,8 +424,8 @@
             return `
     <div class="hist-comment-item">
       <div class="hist-comment-head">
-        <a href="/chapter.html?id=${ch?.id}" class="hist-comment-chapter">${ch?.title ?? "Chapter"}</a>
-        <span class="hist-comment-book">${book?.title ?? ""}</span>
+        <a href="/chapter.html?id=${ch?.id}" class="hist-comment-chapter">${escapeHtml(ch?.title ?? "Chapter")}</a>
+        <span class="hist-comment-book">${escapeHtml(book?.title ?? "")}</span>
         <span class="badge ${c.approved ? "badge-green" : "badge-gold"}">${c.approved ? "Published" : "Pending"}</span>
       </div>
       <div class="hist-comment-text">${escapeHtml(c.content)}</div>

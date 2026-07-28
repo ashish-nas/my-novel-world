@@ -12,7 +12,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SB_SECRET_KEY")!;
 const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID")!;
 const RAZORPAY_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET")!;
 const PLATFORM_FEE_PCT = 0.05;
@@ -25,7 +25,9 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: "not signed in" }), { status: 401 });
+      return new Response(JSON.stringify({ error: "not signed in" }), {
+        status: 401,
+      });
     }
 
     const userClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
@@ -35,7 +37,9 @@ Deno.serve(async (req) => {
       data: { user },
     } = await userClient.auth.getUser();
     if (!user) {
-      return new Response(JSON.stringify({ error: "not signed in" }), { status: 401 });
+      return new Response(JSON.stringify({ error: "not signed in" }), {
+        status: 401,
+      });
     }
 
     const { writer_id, book_id, amount_cents } = await req.json();
@@ -43,7 +47,9 @@ Deno.serve(async (req) => {
     // name as before, since it's the same "smallest currency unit" concept.
     // Razorpay's own practical minimum for an INR order is 100 paise (₹1).
     if (!writer_id || !amount_cents || amount_cents < 100) {
-      return new Response(JSON.stringify({ error: "invalid amount" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "invalid amount" }), {
+        status: 400,
+      });
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
@@ -53,9 +59,15 @@ Deno.serve(async (req) => {
       .eq("id", writer_id)
       .single();
 
-    if (!writer?.upi_id || writer.suspended || !["writer", "admin"].includes(writer.role)) {
+    if (
+      !writer?.upi_id ||
+      writer.suspended ||
+      !["writer", "admin"].includes(writer.role)
+    ) {
       return new Response(
-        JSON.stringify({ error: "This Writer isn't currently accepting donations" }),
+        JSON.stringify({
+          error: "This Writer isn't currently accepting donations",
+        }),
         { status: 400 },
       );
     }
@@ -84,9 +96,14 @@ Deno.serve(async (req) => {
     const order = await orderRes.json();
     if (!orderRes.ok) {
       console.error("Razorpay order creation failed:", order);
-      return new Response(JSON.stringify({ error: order?.error?.description ?? "order creation failed" }), {
-        status: 500,
-      });
+      return new Response(
+        JSON.stringify({
+          error: order?.error?.description ?? "order creation failed",
+        }),
+        {
+          status: 500,
+        },
+      );
     }
 
     return new Response(
@@ -101,6 +118,8 @@ Deno.serve(async (req) => {
     );
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ error: String(err) }), { status: 500 });
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+    });
   }
 });

@@ -19,8 +19,20 @@ ALTER TABLE profiles DROP COLUMN IF EXISTS stripe_charges_enabled;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS upi_id text;
 
 -- donations: rename the gateway-reference column (was Stripe-specific),
--- default currency to inr, and add payout tracking.
-ALTER TABLE donations RENAME COLUMN stripe_payment_intent_id TO razorpay_payment_id;
+-- default currency to inr, and add payout tracking. Guarded so this is
+-- safe to run again later — RENAME COLUMN has no IF EXISTS form, so this
+-- checks first rather than assuming it hasn't already happened.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'donations'
+      AND column_name = 'stripe_payment_intent_id'
+  ) THEN
+    ALTER TABLE donations RENAME COLUMN stripe_payment_intent_id TO razorpay_payment_id;
+  END IF;
+END $$;
+
 ALTER TABLE donations ALTER COLUMN currency SET DEFAULT 'inr';
 ALTER TABLE donations ADD COLUMN IF NOT EXISTS paid_out boolean DEFAULT false;
 ALTER TABLE donations ADD COLUMN IF NOT EXISTS paid_out_at timestamptz;
@@ -32,6 +44,9 @@ ALTER TABLE donations ADD COLUMN IF NOT EXISTS paid_out_at timestamptz;
 REVOKE UPDATE ON donations FROM authenticated;
 GRANT UPDATE (paid_out, paid_out_at) ON donations TO authenticated;
 
+-- CREATE POLICY has no IF NOT EXISTS form either — drop-then-create is
+-- the standard idiom for making it re-runnable.
+DROP POLICY IF EXISTS "Only admins mark donations as paid out" ON donations;
 CREATE POLICY "Only admins mark donations as paid out"
   ON donations FOR UPDATE
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'))

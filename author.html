@@ -244,7 +244,7 @@
       document.title = `${author.pen_name} — My Novel World`;
       document.getElementById("pen-name").textContent = author.pen_name;
       document.getElementById("avatar").innerHTML = author.avatar_url
-        ? `<img src="${author.avatar_url}" alt="">`
+        ? `<img src="${escapeHtml(author.avatar_url)}" alt="">`
         : (author.pen_name || "?")[0].toUpperCase();
 
       // GAP FIX: suspended writer's profile stays reachable (their data

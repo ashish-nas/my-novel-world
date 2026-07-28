@@ -140,8 +140,8 @@ async function loadRecent() {
   }
   body.innerHTML = data.map(c => `
     <tr>
-      <td class="td-title">${c.title}</td>
-      <td>${c.books?.title ?? '—'}</td>
+      <td class="td-title">${escapeHtml(c.title)}</td>
+      <td>${escapeHtml(c.books?.title ?? '—')}</td>
       <td><span class="badge ${c.published ? 'badge-green':'badge-red'}">${c.published?'Live':'Draft'}</span></td>
       <td>${c.word_count?.toLocaleString() ?? 0}</td>
       <td>${c.published_at ? new Date(c.published_at).toLocaleDateString() : '—'}</td>

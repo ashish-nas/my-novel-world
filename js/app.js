@@ -265,8 +265,8 @@ export function confirm(title, msg) {
 }
 
 // NEW — call one of the v2.0 Edge Functions with the signed-in user's
-// own access token attached. Used by the Stripe connect flow and the
-// donate widget.
+// own access token attached. Used by the donate widget to create a
+// Razorpay order.
 export async function callFunction(name, body) {
   const {
     data: { session },

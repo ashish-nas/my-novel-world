@@ -219,7 +219,7 @@
 
     <script type="module">
       import db from "../js/supabase.js";
-      import { requireAdmin, toast, confirm, slugify } from "../js/app.js";
+      import { requireAdmin, toast, confirm, slugify, escapeHtml } from "../js/app.js";
 
       if (!(await requireAdmin())) throw new Error("Not admin");
 
@@ -254,11 +254,11 @@
             return `<tr>
       <td>
         <div style="width:36px;height:54px;background:${b.color || "#111114"};border:1px solid var(--border);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:1.1rem">
-          ${b.cover_url ? `<img src="${b.cover_url}" style="width:100%;height:100%;object-fit:cover;border-radius:2px">` : b.symbol || "✦"}
+          ${b.cover_url ? `<img src="${escapeHtml(b.cover_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:2px">` : b.symbol || "✦"}
         </div>
       </td>
-      <td class="td-title">${b.title}</td>
-      <td><span class="badge">${b.genre}</span></td>
+      <td class="td-title">${escapeHtml(b.title)}</td>
+      <td><span class="badge">${escapeHtml(b.genre)}</span></td>
       <td>${volCount}</td>
       <td>${chCount}</td>
       <td><span class="badge ${b.published ? "badge-green" : "badge-red"}">${b.published ? "Live" : "Draft"}</span></td>
@@ -266,7 +266,7 @@
         <a href="/admin/volumes.html?book=${b.id}" class="btn btn-sm"><i class="ti ti-list"></i> Volumes</a>
         <a href="/admin/edit-character.html?book=${b.id}" class="btn btn-sm"><i class="ti ti-users"></i> Characters</a>
         <button class="btn btn-sm" onclick="editBook(${JSON.stringify(b).replace(/"/g, "&quot;")})"><i class="ti ti-pencil"></i></button>
-        <button class="btn btn-sm btn-danger" onclick="deleteBook('${b.id}','${b.title}')"><i class="ti ti-trash"></i></button>
+        <button class="btn btn-sm btn-danger" onclick="deleteBook(${JSON.stringify({ id: b.id, title: b.title }).replace(/"/g, "&quot;")})"><i class="ti ti-trash"></i></button>
       </td>
     </tr>`;
           })
@@ -336,7 +336,7 @@
         loadBooks();
       };
 
-      window.deleteBook = async (id, title) => {
+      window.deleteBook = async ({ id, title }) => {
         const ok = await confirm(
           "Delete novel?",
           `"${title}" and all its volumes and chapters will be permanently deleted.`,

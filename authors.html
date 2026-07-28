@@ -119,7 +119,7 @@
             (a) => `
         <div class="card author-card fade-up" onclick="location.href='/author.html?id=${a.id}'">
           <div class="author-avatar">
-            ${a.avatar_url ? `<img src="${a.avatar_url}" alt="">` : (a.pen_name || "?")[0].toUpperCase()}
+            ${a.avatar_url ? `<img src="${escapeHtml(a.avatar_url)}" alt="">` : (a.pen_name || "?")[0].toUpperCase()}
           </div>
           <div class="author-name">${escapeHtml(a.pen_name)}</div>
           <div class="author-badge"><i class="ti ti-rosette-discount-check"></i> Verified Writer</div>

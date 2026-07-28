@@ -411,7 +411,7 @@
 
     <script type="module">
       import db from "/js/supabase.js";
-      import { requireAuth, toast } from "/js/app.js";
+      import { requireAuth, toast, escapeHtml } from "/js/app.js";
 
       if (!(await requireAuth())) throw new Error("Not authenticated");
       const { currentUser, currentProfile } = await import("/js/app.js");
@@ -543,11 +543,11 @@
             return `
     <div class="continue-item" onclick="location.href='/chapter.html?id=${ch.id}'">
       <div class="continue-cover" style="background:${book?.color || "#111114"}">
-        ${book?.cover_url ? `<img src="${book.cover_url}">` : book?.symbol || "✦"}
+        ${book?.cover_url ? `<img src="${escapeHtml(book.cover_url)}">` : book?.symbol || "✦"}
       </div>
       <div class="continue-info">
-        <div class="continue-book">${book?.title ?? ""}</div>
-        <div class="continue-chapter">${ch.title}</div>
+        <div class="continue-book">${escapeHtml(book?.title ?? "")}</div>
+        <div class="continue-chapter">${escapeHtml(ch.title)}</div>
         <div class="mini-progress"><div class="mini-progress-fill" style="width:${pct}%"></div></div>
         <div class="continue-pct">${pct}% complete</div>
       </div>
@@ -592,8 +592,8 @@
           <i class="ti ti-heart-filled"></i>
         </button>
       </div>
-      <div class="book-title" onclick="location.href='/book.html?id=${book.id}'">${book.title}</div>
-      <div class="book-genre">${book.genre ?? ""}</div>
+      <div class="book-title" onclick="location.href='/book.html?id=${book.id}'">${escapeHtml(book.title)}</div>
+      <div class="book-genre">${escapeHtml(book.genre ?? "")}</div>
     </div>`;
           })
           .join("");
@@ -641,8 +641,8 @@
             return `
     <div class="history-item">
       <div class="h-title">
-        <a href="/chapter.html?id=${ch.id}">${ch.title}</a>
-        <span class="h-book"> — ${book?.title ?? ""}</span>
+        <a href="/chapter.html?id=${ch.id}">${escapeHtml(ch.title)}</a>
+        <span class="h-book"> — ${escapeHtml(book?.title ?? "")}</span>
       </div>
       <span class="h-date">${new Date(p.updated_at).toLocaleDateString()}</span>
     </div>`;

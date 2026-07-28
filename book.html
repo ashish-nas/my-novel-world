@@ -918,7 +918,7 @@
           .eq("status", "accepted");
 
         const names = (data ?? []).map((a) => a.profiles?.pen_name).filter(Boolean);
-        const text = names.length ? names.join(" & ") : "My Novel World";
+        const text = escapeHtml(names.length ? names.join(" & ") : "My Novel World");
 
         const creatorId = data?.[0]?.user_id;
         const { data: creatorProfile } = creatorId
@@ -963,9 +963,9 @@
         const byline = await loadByline(data.id);
 
         coverEl.innerHTML = data.cover_url
-          ? `<img src="${data.cover_url}" alt="${data.title}"><div class="book-cover-large-overlay"></div><div class="cover-author-large">${byline.text}</div>`
+          ? `<img src="${escapeHtml(data.cover_url)}" alt="${escapeHtml(data.title)}"><div class="book-cover-large-overlay"></div><div class="cover-author-large">${byline.text}</div>`
           : `<div class="cover-symbol-large">${data.symbol || "✦"}</div>
-       <div class="cover-title-large">${data.title}</div>
+       <div class="cover-title-large">${escapeHtml(data.title)}</div>
        <div class="cover-author-large">${byline.text}</div>`;
 
         document.getElementById("book-byline").innerHTML = byline.html;
@@ -1045,8 +1045,8 @@
     <div class="volume-row" onclick="location.href='/volume.html?id=${v.id}'">
       <div class="volume-num">${String(i + 1).padStart(2, "0")}</div>
       <div class="volume-info">
-        <div class="volume-title">${v.title}</div>
-        ${v.description ? `<div class="volume-desc">${v.description}</div>` : ""}
+        <div class="volume-title">${escapeHtml(v.title)}</div>
+        ${v.description ? `<div class="volume-desc">${escapeHtml(v.description)}</div>` : ""}
         <div class="volume-meta">${chCount} chapter${chCount !== 1 ? "s" : ""}</div>
       </div>
       <div class="volume-arrow">→</div>
@@ -1150,11 +1150,11 @@
               (r) => `
       <div class="review-item">
         <div class="review-header">
-          <span class="review-author">${r.profiles?.username ?? "Reader"}</span>
+          <span class="review-author">${escapeHtml(r.profiles?.username ?? "Reader")}</span>
           <span class="review-date">${new Date(r.created_at).toLocaleDateString()}</span>
         </div>
         <div class="stars" style="font-size:.8rem;margin-bottom:.4rem">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</div>
-        ${r.content ? `<div class="review-text">${r.content}</div>` : ""}
+        ${r.content ? `<div class="review-text">${escapeHtml(r.content)}</div>` : ""}
       </div>`,
             )
             .join("");
