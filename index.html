@@ -620,9 +620,45 @@
             </p>
           </div>
         </div>
-        <div class="books-grid" id="books-grid">
-          <!-- Skeleton loaders -->
-          ${Array(4).fill(`
+        <div class="books-grid" id="books-grid"></div>
+      </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-logo">MY NOVEL WORLD</div>
+        <p class="footer-text">
+          All stories written with care — read freely, share widely.<br />
+          <span id="footer-year"></span>
+        </p>
+      </div>
+    </footer>
+
+    <style>
+      @keyframes pulse {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0.4;
+        }
+      }
+    </style>
+
+    <script type="module">
+      import db from "/js/supabase.js";
+      import {
+        initAuth,
+        currentUser,
+        currentProfile,
+        escapeHtml,
+      } from "/js/app.js";
+
+      // Skeleton loaders -- shown immediately, replaced once loadBooks() resolves
+      document.getElementById("books-grid").innerHTML = Array(4)
+        .fill(
+          `
           <div class="book-card">
             <div
               class="book-cover"
@@ -659,36 +695,9 @@
               "
             ></div>
           </div>
-          `).join('')}
-        </div>
-      </div>
-    </main>
-
-    <!-- FOOTER -->
-    <footer class="site-footer">
-      <div class="container">
-        <div class="footer-logo">MY NOVEL WORLD</div>
-        <p class="footer-text">
-          All stories written with care — read freely, share widely.<br />
-          <span id="footer-year"></span>
-        </p>
-      </div>
-    </footer>
-
-    <style>
-      @keyframes pulse {
-        from {
-          opacity: 1;
-        }
-        to {
-          opacity: 0.4;
-        }
-      }
-    </style>
-
-    <script type="module">
-      import db from "/js/supabase.js";
-      import { initAuth, currentUser, currentProfile, escapeHtml } from "/js/app.js";
+          `,
+        )
+        .join("");
 
       document.getElementById("footer-year").textContent =
         "© " + new Date().getFullYear();
