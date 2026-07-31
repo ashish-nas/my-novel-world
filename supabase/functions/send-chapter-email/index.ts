@@ -18,10 +18,14 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const TRIGGER_SECRET = Deno.env.get("TRIGGER_SECRET")!;
 // Your deployed site, no trailing slash — e.g. https://mynovelworld.vercel.app
 const SITE_URL = Deno.env.get("SITE_URL")!;
-// Must be an address on a domain you've verified in Resend.
-// resend.dev / onboarding@resend.dev can only send to YOUR OWN account
-// email — see SETUP.md before you rely on this for real subscribers.
-const FROM_ADDRESS = "My Novel World <updates@mynovelworld.com>";
+// mynovelworld.com is stuck at "Pending" in Resend -- DNS for that
+// domain is not under our control, ownership unresolved as of
+// 2026-07-31. Using Resend's sandbox address until a domain we
+// actually control is verified. IMPORTANT: onboarding@resend.dev
+// only delivers to the Resend account's OWN verified email -- real
+// subscribers get nothing until FROM_ADDRESS points at a verified
+// domain again.
+const FROM_ADDRESS = "My Novel World <onboarding@resend.dev>";
 
 const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
