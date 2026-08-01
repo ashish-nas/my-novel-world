@@ -654,13 +654,6 @@
                   >
                     <i class="ti ti-bookmark"></i> Save
                   </button>
-                  <button
-                    class="icon-btn"
-                    id="notify-btn"
-                    onclick="toggleNotify()"
-                  >
-                    <i class="ti ti-bell"></i> Notify
-                  </button>
                 </div>
               </div>
             </div>
@@ -669,7 +662,16 @@
             <div>
               <p class="book-genre-tag" id="book-genre">Loading</p>
               <h1 class="book-title-hero" id="book-title">Loading...</h1>
-              <p class="book-byline" id="book-byline" style="color: var(--text2); font-size: .85rem; margin-top: -0.5rem; margin-bottom: 1rem"></p>
+              <p
+                class="book-byline"
+                id="book-byline"
+                style="
+                  color: var(--text2);
+                  font-size: 0.85rem;
+                  margin-top: -0.5rem;
+                  margin-bottom: 1rem;
+                "
+              ></p>
               <p class="book-description" id="book-description"></p>
 
               <div
@@ -917,15 +919,25 @@
           .eq("book_id", bookId)
           .eq("status", "accepted");
 
-        const names = (data ?? []).map((a) => a.profiles?.pen_name).filter(Boolean);
-        const text = escapeHtml(names.length ? names.join(" & ") : "My Novel World");
+        const names = (data ?? [])
+          .map((a) => a.profiles?.pen_name)
+          .filter(Boolean);
+        const text = escapeHtml(
+          names.length ? names.join(" & ") : "My Novel World",
+        );
 
         const creatorId = data?.[0]?.user_id;
         const { data: creatorProfile } = creatorId
-          ? await db.from("profiles").select("id, upi_id").eq("id", creatorId).single()
+          ? await db
+              .from("profiles")
+              .select("id, upi_id")
+              .eq("id", creatorId)
+              .single()
           : { data: null };
 
-        let html = names.length ? `by ${names.map((n) => escapeHtml(n)).join(" &amp; ")}` : "";
+        let html = names.length
+          ? `by ${names.map((n) => escapeHtml(n)).join(" &amp; ")}`
+          : "";
 
         if (creatorProfile?.upi_id) {
           html += ` <a href="/author.html?id=${creatorProfile.id}#support" style="color:var(--gold);margin-left:.5rem"><i class="ti ti-heart"></i> Support</a>`;
@@ -1018,7 +1030,6 @@
         loadLikesCount();
         if (currentUser) {
           checkBookmark();
-          checkNotify();
           document.getElementById("post-theory-btn").style.display =
             "inline-flex";
         } else {
@@ -1479,56 +1490,6 @@
             return;
           }
           toast("Saved to your library", "success");
-        }
-        btn.classList.toggle("active");
-      };
-
-      // ── Email notify ──
-      async function checkNotify() {
-        const { data } = await db
-          .from("email_subscriptions")
-          .select("id")
-          .eq("user_id", currentUser.id)
-          .eq("book_id", bookId)
-          .eq("active", true)
-          .single();
-        document
-          .getElementById("notify-btn")
-          .classList.toggle("active", !!data);
-      }
-      window.toggleNotify = async () => {
-        if (!currentUser) {
-          location.href = "/login.html";
-          return;
-        }
-        const btn = document.getElementById("notify-btn");
-        const isActive = btn.classList.contains("active");
-        if (isActive) {
-          const { error } = await db
-            .from("email_subscriptions")
-            .update({ active: false })
-            .eq("user_id", currentUser.id)
-            .eq("book_id", bookId);
-          if (error) {
-            toast("Error: " + error.message, "error");
-            return;
-          }
-          toast("Notifications off");
-        } else {
-          const { error } = await db.from("email_subscriptions").upsert(
-            {
-              user_id: currentUser.id,
-              book_id: bookId,
-              email: currentUser.email,
-              active: true,
-            },
-            { onConflict: "user_id,book_id" },
-          );
-          if (error) {
-            toast("Error: " + error.message, "error");
-            return;
-          }
-          toast("You'll be notified of new chapters!", "success");
         }
         btn.classList.toggle("active");
       };

@@ -413,12 +413,6 @@ enabled = true
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
 
-[functions.send-chapter-email]
-verify_jwt = false
-
-[functions.unsubscribe]
-verify_jwt = false
-
 [functions.create-razorpay-order]
 verify_jwt = true
 
