@@ -1,4 +1,4 @@
-<!doctype html>
+<<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -620,7 +620,9 @@
             </p>
           </div>
         </div>
-        <div class="books-grid" id="books-grid"></div>
+        <div class="books-grid" id="books-grid">
+          
+        </div>
       </div>
     </main>
 
@@ -631,6 +633,17 @@
         <p class="footer-text">
           All stories written with care — read freely, share widely.<br />
           <span id="footer-year"></span>
+        </p>
+        <p class="footer-text" style="margin-top: 0.5rem">
+          <a href="/policies.html#terms" style="color: var(--text2)">Terms</a>
+          &nbsp;·&nbsp;
+          <a href="/policies.html#privacy" style="color: var(--text2)">Privacy</a>
+          &nbsp;·&nbsp;
+          <a href="/policies.html#shipping" style="color: var(--text2)">Shipping</a>
+          &nbsp;·&nbsp;
+          <a href="/policies.html#refunds" style="color: var(--text2)">Refunds</a>
+          &nbsp;·&nbsp;
+          <a href="/policies.html#contact" style="color: var(--text2)">Contact</a>
         </p>
       </div>
     </footer>
@@ -648,17 +661,10 @@
 
     <script type="module">
       import db from "/js/supabase.js";
-      import {
-        initAuth,
-        currentUser,
-        currentProfile,
-        escapeHtml,
-      } from "/js/app.js";
+      import { initAuth, currentUser, currentProfile, escapeHtml } from "/js/app.js";
 
       // Skeleton loaders -- shown immediately, replaced once loadBooks() resolves
-      document.getElementById("books-grid").innerHTML = Array(4)
-        .fill(
-          `
+      document.getElementById("books-grid").innerHTML = Array(4).fill(`
           <div class="book-card">
             <div
               class="book-cover"
@@ -695,9 +701,7 @@
               "
             ></div>
           </div>
-          `,
-        )
-        .join("");
+          `).join("");
 
       document.getElementById("footer-year").textContent =
         "© " + new Date().getFullYear();
