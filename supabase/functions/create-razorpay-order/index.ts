@@ -17,16 +17,36 @@ const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID")!;
 const RAZORPAY_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET")!;
 const PLATFORM_FEE_PCT = 0.05;
 
+// This function is called directly from the browser (the Support widget),
+// not server-to-server, so it has to answer CORS preflight requests
+// itself — Supabase does not add these headers automatically. Without
+// this, every call fails at the preflight stage with a CORS error before
+// the function's own code (auth check, amount validation, etc.) ever
+// runs — which is exactly what was happening: no toast, no modal, just
+// a silently failed fetch in the browser console.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
 function basicAuthHeader() {
   return "Basic " + btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`);
 }
 
 Deno.serve(async (req) => {
+  // Browsers send an OPTIONS preflight before the real POST. Answer it
+  // immediately with just the CORS headers — no auth check, no body.
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "not signed in" }), {
         status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -39,6 +59,7 @@ Deno.serve(async (req) => {
     if (!user) {
       return new Response(JSON.stringify({ error: "not signed in" }), {
         status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -49,6 +70,7 @@ Deno.serve(async (req) => {
     if (!writer_id || !amount_cents || amount_cents < 100) {
       return new Response(JSON.stringify({ error: "invalid amount" }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -68,7 +90,10 @@ Deno.serve(async (req) => {
         JSON.stringify({
           error: "This Writer isn't currently accepting donations",
         }),
-        { status: 400 },
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
@@ -102,6 +127,7 @@ Deno.serve(async (req) => {
         }),
         {
           status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
     }
@@ -114,12 +140,16 @@ Deno.serve(async (req) => {
         currency: "INR",
         writer_name: writer.pen_name,
       }),
-      { status: 200, headers: { "Content-Type": "application/json" } },
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
   } catch (err) {
     console.error(err);
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
