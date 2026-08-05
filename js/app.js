@@ -38,14 +38,32 @@ async function getSessionAndProfile() {
 
   // Profile missing — create it. New accounts always start as 'reader';
   // promote your own account to 'admin' once in Supabase → Table Editor (see design doc §10.4).
-  const newP = {
-    id: user.id,
-    username: user.email.split("@")[0],
-    role: "reader",
-  };
-  await db.from("profiles").insert(newP);
-  localStorage.setItem("mnw_profile", JSON.stringify(newP));
-  return { user, profile: newP };
+  let username = user.email.split("@")[0];
+  let { data: inserted, error: insertError } = await db
+    .from("profiles")
+    .insert({ id: user.id, username, role: "reader" })
+    .select()
+    .single();
+
+  // Username collision — same local part, different email domain
+  // (alice@gmail.com vs alice@yahoo.com). Retry once with a short
+  // random suffix instead of failing silently.
+  if (insertError?.code === "23505") {
+    username = `${username}-${Math.random().toString(36).slice(2, 6)}`;
+    ({ data: inserted, error: insertError } = await db
+      .from("profiles")
+      .insert({ id: user.id, username, role: "reader" })
+      .select()
+      .single());
+  }
+
+  if (insertError) {
+    console.error("Failed to create profile:", insertError);
+    return { user, profile: null };
+  }
+
+  localStorage.setItem("mnw_profile", JSON.stringify(inserted));
+  return { user, profile: inserted };
 }
 
 // NEW — force a fresh profile fetch and re-cache it. Used by profile.html
@@ -137,7 +155,10 @@ export async function requireWriter() {
   currentProfile = profile;
   renderNav();
 
-  if (!["writer", "admin"].includes(currentProfile?.role) || currentProfile?.suspended) {
+  if (
+    !["writer", "admin"].includes(currentProfile?.role) ||
+    currentProfile?.suspended
+  ) {
     location.href = "/profile.html";
     return false;
   }
